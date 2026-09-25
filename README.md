@@ -6,12 +6,19 @@
 ## 启动
 
 ```bash
-cd openwrt-custom-builder
+git clone https://github.com/sunjg789/sjg-openwrt-builder.git
+cd sjg-openwrt-builder
 node server.js
 # 浏览器打开 http://127.0.0.1:8730
 ```
 
 Windows 双击 `start.bat`。改端口：`PORT=9000 node server.js`。
+
+首次访问需要联网向 `downloads.openwrt.org` / `downloads.immortalwrt.org` 抓取元数据，
+抓到后会缓存在 `cache/`，之后离线也能用缓存过的版本。
+
+> 若 `git push` 报 `CRYPT_E_REVOCATION_OFFLINE`，是 Windows Git 的 schannel 在你所在网络下
+> 查不到证书吊销列表，换 OpenSSL 后端即可：`git config http.sslBackend openssl`。
 
 ## 自检
 
