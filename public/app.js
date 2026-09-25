@@ -711,11 +711,14 @@ async function ghPoll() {
   const box = $('#ghStatus');
   const done = ['completed', 'failed', 'unknown'];
   try {
-    for (let i = 0; i < 360; i++) { // 最多盯 30 分钟
+    for (let i = 0; i < 900; i++) { // 最多盯 75 分钟（大产物回传慢）
       const m = await api('/api/build/status?id=' + encodeURIComponent(window.__buildId));
       ghRender(m);
       // terminal 表示服务端已收尾（日志/产物都拉完），再轮询下去只是空转
-      if (done.includes(m.state) || m.terminal) break;
+      if (m.terminal) break;
+      // 云端跑完但产物还在后台回传时不能停，否则前台看不到进度条走完
+      const stillPulling = (m.files || []).some((f) => f.pulling);
+      if (done.includes(m.state) && !stillPulling) break;
       await new Promise((r) => setTimeout(r, 5000));
     }
   } catch (e) {
@@ -776,6 +779,15 @@ function ghRender(m) {
       if (f.error) {
         html += `<div class="gh-step fail"><span class="dot"></span><span class="nm">${f.name}</span>
           <span class="mini">拉取失败：${f.error}</span></div>`;
+        continue;
+      }
+      if (f.pulling) {
+        // 后台正在回传：显示断点续传的进度，别让人以为卡住了
+        const mb = (n) => (Number(n) / 1048576).toFixed(1);
+        const pct = f.total ? Math.min(99, Math.floor((f.written / f.total) * 100)) : 0;
+        html += `<div class="gh-step run"><span class="dot"></span>
+          <span class="nm">${f.name}<span class="mini"> · 正在回传 ${mb(f.written)} / ${f.total ? mb(f.total) + ' MB' : '未知大小'}（${pct}%）</span></span>
+          <span class="mini">${f.resumed ? '已续传 ' + mb(f.resumed) + ' MB · ' : ''}回传中，可继续等待或先关页面</span></div>`;
         continue;
       }
       const url = `/api/build/file?id=${encodeURIComponent(m.id)}&name=${encodeURIComponent(f.file)}`;

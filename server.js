@@ -340,13 +340,30 @@ const server = http.createServer(async (req, res) => {
       if (!hit || hit.error) return json(res, 404, { error: '没有这个文件' });
       const file = path.join(B.dirOf(meta.id), hit.file);
       if (!file.startsWith(B.dirOf(meta.id)) || !fs.existsSync(file)) return json(res, 404, { error: '文件已不在本地' });
-      const data = fs.readFileSync(file);
-      res.writeHead(200, {
+      // 上百 MB 的产物支持 Range：浏览器/下载工具断线后能续传，不用重头再下
+      const total = fs.statSync(file).size;
+      const base = {
         'Content-Type': 'application/zip',
-        'Content-Length': data.length,
+        'Accept-Ranges': 'bytes',
         'Content-Disposition': `attachment; filename="${encodeURIComponent(hit.name)}"`,
-      });
-      return res.end(data);
+      };
+      const m = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range || ''));
+      if (m) {
+        let start = m[1] ? Number(m[1]) : 0;
+        let end = m[2] ? Number(m[2]) : total - 1;
+        if (start >= total || end >= total) {
+          res.writeHead(416, Object.assign({ 'Content-Range': `bytes */${total}` }, base));
+          return res.end();
+        }
+        if (start > end) start = end;
+        res.writeHead(206, Object.assign({
+          'Content-Range': `bytes ${start}-${end}/${total}`,
+          'Content-Length': end - start + 1,
+        }, base));
+        return fs.createReadStream(file, { start, end }).pipe(res);
+      }
+      res.writeHead(200, Object.assign({ 'Content-Length': total }, base));
+      return fs.createReadStream(file).pipe(res);
     }
 
     // ---------------- 预设 ----------------

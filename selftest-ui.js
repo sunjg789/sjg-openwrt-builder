@@ -229,6 +229,16 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   check(!doc.querySelector('#ghStatus .gh-fail'), '成功态不再显示失败摘要');
   check(!/没有产出 Artifact/.test(doc.querySelector('#ghStatus').textContent), '成功态不误报「没有产物」');
 
+  // 回传中：必须显示续传进度，且不能给出还没写完的"下载"链接
+  ghRender({
+    id: 't-1', repo: 'a/b', state: 'completed', conclusion: 'success', summary: { target: 'x86', subtarget: '64' },
+    jobs: [], artifacts: [], files: [{ name: 'firmware.zip', file: 'f.zip', pulling: true, written: 24 * 1048576, total: 168 * 1048576, resumed: 8 * 1048576 }],
+  });
+  const pullTxt = doc.querySelector('#ghStatus').textContent;
+  check(!doc.querySelector('#ghStatus a[href*="/api/build/file"]'), '回传中不提供尚未写完的下载链接');
+  check(/正在回传 24.0 \/ 168.0 MB（14%）/.test(pullTxt), '回传中显示已传/总量与百分比');
+  check(/已续传 8.0 MB/.test(pullTxt), '断点续传时会提示已续传的量');
+
   console.log('\n=== 结果 ===');
   console.log(fail ? `\x1b[31m${fail} 项未通过\x1b[0m` : '\x1b[32m全部通过\x1b[0m');
   dom.window.close();

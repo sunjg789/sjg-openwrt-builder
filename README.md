@@ -175,6 +175,16 @@ openwrt-custom-builder/
 | 两个 run 同时跑，分钟数翻倍 | push 触发器与 dispatch 各起一个 | 走 dispatch 时才带 `[skip ci]` |
 | Artifact 下载 302 拿到 HTML | REST 接口返回跳转地址 | 手动跟 `Location`，并校验 zip 魔数 `PK` |
 | 失败只见 `Process completed with exit code 2` | 真正的报错埋在几百行 make 输出里 | 拉 `/actions/runs/<id>/logs`（**零依赖手写 ZIP 解析**），提炼报错行后在前端显示 |
+| 大产物下载到一半 `terminated` | Node 的 `fetch` **不读 `HTTP_PROXY`**，且整包流式下载中途断掉就前功尽弃 | 改成 **Range 分片 + 断点续传 + 逐片重试**，先 `Range: bytes=0-0` 探总长，再按 4MB 一片写入 |
+| 续传到一半全部报 **HTTP 403** | 下载直链是 **Azure 的短期 SAS 令牌**，十几分钟就失效；旧链接重试多少次都没用 | 每次重试都重新向 REST 取一张新票（`artifactZipUrl()`）再续下 |
+| 点了状态半天不返回 | 回传大产物把请求线程占住了 | 回传改为**后台任务**，状态接口立刻返回，进度写进 `meta.json`，前端每 5 秒刷新「已回传 24.0 / 168.0 MB」 |
+| 本地下载按钮对上百 MB 的文件不友好 | 原来整包读进内存后再吐，且忽略 Range | 改成流式 + `Accept-Ranges`，支持 206 / 416，浏览器断线可续 |
+
+产物体积与回传速度是这闭环里唯一不适合"等一下就好"的部分，目前是这样收敛的：
+
+- 云端默认**关闭虚拟磁盘格式**（`CONFIG_QCOW2/VDI/VMDK/VHDX_IMAGES=n`）：单实例 x86/64 产物从 **386MB 降到 168MB**，省掉的一半几乎全是 qcow2/vdi/vmdk/vhdx。
+- 回传是**可中断可续传**的：关掉页面、甚至重启服务，下次轮询都会从已落盘的位置继续。
+- 面板显示回传百分比；回传中不会给出"下载"按钮，避免下到半截的 zip。
 
 依赖也是我们踩出来的补齐项（`lib/genib.js` 的 apt 那一步）：
 
@@ -202,6 +212,29 @@ openwrt-custom-builder/
 
 第一条已在本站实现，数据源是上游 `sha256sums`（**不是** `profiles.json` 的 `images[]`——
 后者缺 `.gz` 后缀，实测会 404）。
+
+## 当 `git push` 用不了：`tools/push-via-api.js`
+
+某些受限环境（沙箱 / 受限终端）里，`git push` 会直接被杀掉、`ls-remote` 却正常，Node 里
+`spawnSync('git', …)` 还会报 `EBUSY`。这时还能用 REST 通道把本地 HEAD 推上去：
+
+```bash
+git rev-parse HEAD > tmp-head-sha.txt
+git ls-tree -r HEAD > tmp-ls.txt
+git cat-file commit HEAD > tmp-commit.txt
+git rev-parse "HEAD^{tree}" > tmp-root-tree.txt
+node tools/push-via-api.js
+```
+
+脚本自己重建 blob → tree → commit 再更新 ref。因为 **Git 对象的 sha 由内容决定**，只要
+tree / parent / author / committer / message 全部对齐，远端生成的 commit 会和本地 HEAD
+**是同一个 sha**。
+
+两个踩过的坑，脚本里已经处理了：
+
+- **树条目必须排序**，目录按「名字 + `/`」参与比较；顺序错了根树 sha 就对不上（子树却是对的，很难查）。
+- `git archive` 会按 `.gitattributes` **反向出差换行**，拿它导出再上传会得到另一个 blob；
+  脚本直接读工作区文件，并在 sha 对不上时自动试 LF / CRLF 两种还原。
 
 ## 已知边界
 
