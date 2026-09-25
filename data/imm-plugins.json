@@ -1,0 +1,2718 @@
+{
+ "imm-24.10": [
+  {
+   "pkgs": [
+    "luci-i18n-quickstart-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "!/bin/bash | ============= imm仓库外的第三方插件============== | ============= 若启用 则打开注释 ================ | ============= 但此文件也可以处理仓库内的软件去留 本质上是做了一个PACKAGES字符串的拼接 ================ | 各位注意 如果你构建的固件是硬路由 此文件的注释要酌情",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "bash",
+    "quickfile",
+    "luci-app-quickfile",
+    "luci-i18n-quickfile-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "新增非常好用的文件管理器 sbwml/luci-app-quickfile （luci 23版本不支持 勿集成）",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-uninstall"
+   ],
+   "enabled": false,
+   "desc": "高级卸载 by YT Vedio Talk",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-theme-aurora",
+    "luci-app-aurora-config",
+    "luci-i18n-aurora-config-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "极光主题 by github eamonxg",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-adguardhome"
+   ],
+   "enabled": false,
+   "desc": "去广告adghome",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-openvpn-server",
+    "luci-i18n-openvpn-server-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "代理相关",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-openvpn-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dae-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-daed-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "xray-core",
+    "sing-box",
+    "hysteria",
+    "luci-i18n-passwall-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "xray-core",
+    "sing-box",
+    "hysteria",
+    "kmod-nft-socket",
+    "kmod-nft-tproxy",
+    "luci-app-passwall2",
+    "luci-i18n-passwall2-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "passwall2 已更新到26.5.1",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-openclash"
+   ],
+   "enabled": true,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-homeproxy-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "xray-core",
+    "naiveproxy",
+    "luci-app-ssr-plus",
+    "luci-i18n-ssr-plus-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "新版ssrp 支持mihomo",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nikki-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-nekobox"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "momo",
+    "luci-app-momo",
+    "luci-i18n-momo-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "clashoo",
+    "luci-app-clashoo",
+    "luci-i18n-clashoo-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "新增 clashoo",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-proto-wireguard"
+   ],
+   "enabled": false,
+   "desc": "VPN",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-tailscale-community",
+    "luci-i18n-tailscale-community-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-partexp",
+    "luci-i18n-partexp-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "分区扩容 by sirpdboy",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-watchdog",
+    "luci-i18n-watchdog-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "看门狗watchdog by sirpdboy",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-theme-kucat"
+   ],
+   "enabled": false,
+   "desc": "酷猫主题 by sirpdboy",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-advancedplus",
+    "luci-i18n-advancedplus-zh-cn",
+    "-luci-app-argon-config",
+    "-luci-i18n-argon-config-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "进阶设置 by sirpdboy | 当luci-app-advancedplus插件开启时 需排除冲突项 luci-app-argon-config和luci-i18n-argon-config-zh-cn 减号代表排除 | 若要集成此插件请注意相关issue:https://github.com/wukongdaily/ImmortalWrt-ImageBuilder/issues/521",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-mosdns",
+    "luci-i18n-mosdns-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "MosDNS",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-turboacc"
+   ],
+   "enabled": false,
+   "desc": "Turbo ACC 网络加速",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-appfilter",
+    "luci-i18n-appfilter-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "应用过滤 openappfilter.com",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-lucky",
+    "lucky"
+   ],
+   "enabled": false,
+   "desc": "Lucky大吉",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-gecoosac",
+    "gecoosac"
+   ],
+   "enabled": false,
+   "desc": "集客AC",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-taskplan",
+    "luci-i18n-taskplan-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "任务设置",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "easytier",
+    "luci-app-easytier"
+   ],
+   "enabled": false,
+   "desc": "Easytier",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "webdav2",
+    "luci-app-unishare"
+   ],
+   "enabled": false,
+   "desc": "统一文件共享",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ipsec-vpnd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "IPSec VPN 服务器",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-bandix",
+    "luci-i18n-bandix-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "Bandix流量监控 by timsaya",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-rtp2httpd",
+    "luci-i18n-rtp2httpd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "IPTV 流媒体转发服务器 - rtp2httpd by stackia",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dufs-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "静态文件服务器dufs",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-3cat-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "===========================以下imm仓库内的软件==============================↓",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-3ginfo-lite-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-acl-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-acme-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-adblock-fast-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-adblock-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-advanced-reboot-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-airplay2-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-amule-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-appfilter-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-aria2-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-arpbind-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-attendedsysupgrade-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-autoreboot-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-banip-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-battstatus-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-bcp38-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-bitsrunlogin-go-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-bmx7-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-cd8021x-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-cifs-mount-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-clamav-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-cloudflared-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-commands-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-coovachilli-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-cpulimit-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-crowdsec-firewall-bouncer-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-cshark-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dashboard-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dawn-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dcwapd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ddns-go-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ddns-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-diskman-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dsl-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dump1090-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dynapoint-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-email-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-eoip-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-eqos-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-example-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-filebrowser-go-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-filebrowser-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-filemanager-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-frpc-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-frps-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-fwknopd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-gost-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-haproxy-tcp-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-hd-idle-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-https-dns-proxy-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ipsec-vpnd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-irqbalance-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-keepalived-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ksmbd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-lldpd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-lxc-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-microsocks-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-minidlna-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-minieap-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-mjpg-streamer-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-modemband-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-mosquitto-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-msd_lite-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-music-remote-center-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-mwan3-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-n2n-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-natmap-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-netdata-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nextdns-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nfs-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nft-qos-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ngrokc-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nlbwmon-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nps-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nut-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ocserv-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-oled-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-olsr-services-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-olsr-viz-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-olsr-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-omcproxy-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-openlist-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-openwisp-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-oscam-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-p910nd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-pagekitec-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-pbr-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-pppoe-relay-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-pppoe-server-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-privoxy-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ps3netsrv-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-qbittorrent-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-qos-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-radicale-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ramfree-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-rclone-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-rp-pppoe-server-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-rustdesk-server-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-samba4-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ser2net-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-smartdns-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-sms-tool-js-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-snmpd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-softethervpn-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-splash-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-spotifyd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-sqm-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-squid-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-sshtunnel-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-statistics-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-syncthing-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-sysuh3c-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-timewol-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-tinyproxy-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-tor-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-transmission-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-travelmate-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ttyd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ua2f-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-udpxy-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-uhttpd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-unbound-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-upnp-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-usb-printer-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-usteer-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-v2raya-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-vlmcsd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-vnstat2-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-vsftpd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-watchcat-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-wechatpush-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-wifischedule-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-wol-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-xfrpc-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-xinetd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-xlnetacc-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-zerotier-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  }
+ ],
+ "imm-25.12": [
+  {
+   "pkgs": [
+    "bash",
+    "quickfile",
+    "luci-app-quickfile",
+    "luci-i18n-quickfile-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "!/bin/bash | ============= imm 25.12.x仓库外的第三方插件apk========== | ============= 若启用 则打开注释 ======================== | ============= 但此文件也可以处理仓库内的软件去留 本质上是做了一个PACKAGES字符串的拼接 ================ | 各位注意 如果你构建的固",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-theme-aurora",
+    "luci-app-aurora-config",
+    "luci-i18n-aurora-config-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "极光主题和配置 by github eamonxg",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-partexp",
+    "luci-i18n-partexp-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "分区扩容 by sirpdboy",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "bandix",
+    "luci-app-bandix",
+    "luci-i18n-bandix-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "流量监控 by timsaya",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "xray-core",
+    "naiveproxy",
+    "luci-app-ssr-plus",
+    "luci-i18n-ssr-plus-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "新增ssrp apk",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "xray-core",
+    "sing-box",
+    "hysteria",
+    "kmod-nft-socket",
+    "kmod-nft-tproxy",
+    "luci-app-passwall2",
+    "luci-i18n-passwall2-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "新增passwall2 apk",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-rtp2httpd",
+    "luci-i18n-rtp2httpd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "IPTV 流媒体转发服务器 - rtp2httpd by stackia",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "clashoo",
+    "luci-app-clashoo",
+    "luci-i18n-clashoo-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "新增 clashoo by kenzok8",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-lucky",
+    "lucky",
+    "luci-i18n-lucky-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "新增 Lucky大吉 by gdy666 & sirpdboy",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nikki-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "仓库内代理相关apk",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-openvpn-server",
+    "luci-i18n-openvpn-server-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-openvpn-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dae-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-daed-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-homeproxy-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "xray-core",
+    "sing-box",
+    "hysteria",
+    "luci-i18n-passwall-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-openclash"
+   ],
+   "enabled": true,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-proto-wireguard"
+   ],
+   "enabled": false,
+   "desc": "VPN",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-app-tailscale-community",
+    "luci-i18n-tailscale-community-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-zerotier-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "内网穿透",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-frpc-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-frps-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ddns-go-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ddns-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ngrokc-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nps-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-xfrpc-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-openlist-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "网盘聚合",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-filebrowser-go-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "文件管理",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-filebrowser-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-filemanager-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-timewol-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "网络唤醒",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-wol-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-commands-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "自定义命令",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-3cat-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "===========================以下imm仓库内的软件==============================↓",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-3ginfo-lite-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-acl-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-acme-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-adblock-fast-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-adblock-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-advanced-reboot-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-airplay2-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-amule-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-appfilter-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-aria2-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-arpbind-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-attendedsysupgrade-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-autoreboot-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-banip-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-battstatus-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-bcp38-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-bitsrunlogin-go-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-bmx7-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-cd8021x-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-cifs-mount-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-clamav-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-cloudflared-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-coovachilli-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-cpulimit-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-crowdsec-firewall-bouncer-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-cshark-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dashboard-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dawn-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dcwapd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-diskman-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dsl-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dump1090-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-dynapoint-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-email-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-eoip-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-eqos-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-example-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-fwknopd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-gost-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-haproxy-tcp-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-hd-idle-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-https-dns-proxy-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ipsec-vpnd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-irqbalance-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-keepalived-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ksmbd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-lldpd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-lxc-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-microsocks-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-minidlna-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-minieap-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-mjpg-streamer-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-modemband-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-mosquitto-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-msd_lite-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-music-remote-center-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-mwan3-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-n2n-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-natmap-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-netdata-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nextdns-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nfs-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nft-qos-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nlbwmon-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-nut-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ocserv-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-oled-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-olsr-services-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-olsr-viz-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-olsr-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-omcproxy-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-openwisp-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-oscam-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-p910nd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-pagekitec-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-pbr-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-pppoe-relay-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-pppoe-server-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-privoxy-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ps3netsrv-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-qbittorrent-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-qos-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-radicale-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ramfree-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-rclone-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-rp-pppoe-server-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-rustdesk-server-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-samba4-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ser2net-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-smartdns-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-sms-tool-js-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-snmpd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-softethervpn-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-splash-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-spotifyd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-sqm-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-squid-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-sshtunnel-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-statistics-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-syncthing-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-sysuh3c-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-tinyproxy-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-tor-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-transmission-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-travelmate-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ttyd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-ua2f-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-udpxy-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-uhttpd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-unbound-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-upnp-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-usb-printer-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-usteer-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-v2raya-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-vlmcsd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-vnstat2-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-vsftpd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-watchcat-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-wechatpush-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-wifischedule-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-xinetd-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  },
+  {
+   "pkgs": [
+    "luci-i18n-xlnetacc-zh-cn"
+   ],
+   "enabled": false,
+   "desc": "",
+   "section": ""
+  }
+ ]
+}

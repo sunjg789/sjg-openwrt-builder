@@ -1,0 +1,18 @@
+{
+  "name": "openwrt-custom-builder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "本地 OpenWrt 固件定制站：表单勾选 → 实时预览 → 一键导出编译套件（零第三方依赖）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "selftest": "node selftest2.js && node selftest3.js",
+    "selftest:ui": "node selftest-ui.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "jsdom": ">=26"
+  }
+}

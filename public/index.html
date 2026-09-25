@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenWrt / ImmortalWrt 固件定制站</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <span class="logo">◈</span>
+    <div>
+      <h1>固件定制站</h1>
+      <p class="sub">ImmortalWrt / OpenWrt 官方 · 全部设备 · 任意版本 · 插件随版本自动变化</p>
+    </div>
+  </div>
+  <div class="top-right">
+    <span class="badge" id="srcBadge">数据源：downloads.openwrt.org / downloads.immortalwrt.org</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ================= 左：向导 ================= -->
+  <nav class="steps" id="steps">
+    <a class="step on" data-step="1"><i>1</i><span>发行版</span></a>
+    <a class="step" data-step="2"><i>2</i><span>版本</span></a>
+    <a class="step" data-step="3"><i>3</i><span>设备</span></a>
+    <a class="step" data-step="4"><i>4</i><span>插件</span></a>
+    <a class="step" data-step="5"><i>5</i><span>系统定制</span></a>
+    <a class="step" data-step="6"><i>6</i><span>生成</span></a>
+  </nav>
+
+  <!-- ================= 中：主区 ================= -->
+  <main class="main">
+
+    <!-- ---- Step 1 发行版 ---- -->
+    <section class="panel on" data-panel="1">
+      <h2>选择发行版</h2>
+      <p class="hint">两者可随时切换，下面的版本列表与设备树会整体刷新。数据源实时抓取自各自的官方下载服务器。</p>
+      <!-- 骨架内容：JS 加载完成后被真实卡片替换；若 JS 未就绪，用户也能立刻看到页面结构 -->
+      <div class="distro-grid" id="distroGrid">
+        <div class="distro skel"><b>—</b><span>—</span></div>
+        <div class="distro skel"><b>—</b><span>—</span></div>
+      </div>
+    </section>
+
+    <!-- ---- Step 2 版本 ---- -->
+    <section class="panel" data-panel="2">
+      <h2>选择版本</h2>
+      <div class="row">
+        <label class="fld">
+          <span>版本系列</span>
+          <select id="seriesSel"><option value="">全部</option></select>
+        </label>
+        <label class="fld">
+          <span>精确版本 <em id="verCount" class="mini"></em></span>
+          <select id="versionSel"></select>
+        </label>
+        <label class="fld">
+          <span>源码引用策略</span>
+          <select id="refPolicy">
+            <option value="tag">锁定 tag（可完整复现，推荐）</option>
+            <option value="branch">跟踪维护分支（含后续安全补丁）</option>
+          </select>
+        </label>
+      </div>
+      <div id="versionInfo" class="info-card"></div>
+    </section>
+
+    <!-- ---- Step 3 设备 ---- -->
+    <section class="panel" data-panel="3">
+      <h2>选择设备</h2>
+      <div class="row">
+        <label class="fld">
+          <span>CPU 架构 (target) <em id="tCount" class="mini"></em></span>
+          <select id="targetSel"></select>
+        </label>
+        <label class="fld">
+          <span>子架构 (subtarget)</span>
+          <select id="subSel"></select>
+        </label>
+      </div>
+      <div class="row">
+        <label class="fld grow">
+          <span>搜索机型（支持型号关键字，如 xiaomi / rpi / glinet）</span>
+          <input id="profileSearch" type="search" placeholder="输入关键字过滤，或直接看下方完整列表">
+        </label>
+      </div>
+      <div class="row">
+        <label class="fld grow">
+          <span>设备 profile <em id="pCount" class="mini"></em></span>
+          <select id="profileSel" size="12"></select>
+        </label>
+      </div>
+      <div id="deviceInfo" class="info-card"></div>
+    </section>
+
+    <!-- ---- Step 4 插件 ---- -->
+    <section class="panel" data-panel="4">
+      <h2>选择插件</h2>
+      <p class="hint" id="pkgHint">正在读取该版本的软件索引…</p>
+
+      <details class="adv">
+        <summary>第三方软件源（ImageBuilder 装第三方插件的前置条件）</summary>
+        <div class="adv-body">
+          <p class="hint">ImageBuilder <b>只能打包软件源里真实存在的包</b>。勾选第三方插件前，先在这里配上对应的软件源根目录；留空则仅使用上游官方源。</p>
+          <div class="repo-row" id="repoList"></div>
+          <div class="row">
+            <label class="fld grow">
+              <span>软件源根 URL（需直连到含 packages.adb / Packages.gz / index.json 的目录）</span>
+              <input id="repoUrl" type="url" placeholder="https://example.github.io/repo/packages/x86_64/base">
+            </label>
+            <label class="fld">
+              <span>名称</span>
+              <input id="repoName" type="text" placeholder="自定义源">
+            </label>
+            <button class="btn" id="repoAdd">添加</button>
+            <button class="btn ghost" id="repoTest">测试连通性</button>
+          </div>
+          <div id="repoTestOut" class="code-min"></div>
+        </div>
+      </details>
+
+      <div class="pkg-toolbar">
+        <input id="pkgSearch" type="search" placeholder="搜索插件名 / 包名…">
+        <div class="cats" id="catFilters"></div>
+        <label class="switch"><input type="checkbox" id="showRepoDiscovered"> 显示该版本软件源里的其它 luci 应用</label>
+      </div>
+      <div class="pkg-list" id="pkgList"></div>
+      <div class="pkg-bar">
+        <span>已选 <b id="selCount">0</b> 个插件 · 预计占用 <b id="selSize">0</b> MB</span>
+        <button class="btn ghost sm" id="pkgClear">清空</button>
+        <button class="btn ghost sm" id="pkgRecommended">载入推荐组合</button>
+      </div>
+    </section>
+
+    <!-- ---- Step 5 系统定制 ---- -->
+    <section class="panel" data-panel="5">
+      <h2>系统定制</h2>
+
+      <h3>基本</h3>
+      <div class="row">
+        <label class="fld"><span>主机名</span><input id="hostname" value="SJG"></label>
+        <label class="fld"><span>登录名（可选）</span><input id="loginName" value="sunjg789"></label>
+        <label class="fld"><span>root 密码</span><input id="rootPass" type="password" value="sunjian393626"></label>
+        <label class="fld"><span>登录名密码</span><input id="loginPass" type="password" value="sunjian393626"></label>
+      </div>
+
+      <h3>网络</h3>
+      <div class="row">
+        <label class="fld"><span>工作模式</span>
+          <select id="netMode">
+            <option value="router">主路由（多网口 WAN+LAN）</option>
+            <option value="bypass">旁路由（单臂网关，关 DHCP）</option>
+          </select>
+        </label>
+        <label class="fld"><span>WAN 协议</span>
+          <select id="wanProto">
+            <option value="dhcp">DHCP 自动获取</option>
+            <option value="pppoe">PPPoE 宽带拨号</option>
+            <option value="static">静态 IP</option>
+          </select>
+        </label>
+        <label class="fld"><span>LAN 管理地址</span><input id="lanIp" value="192.168.3.111"></label>
+        <label class="fld"><span>子网掩码</span><input id="lanMask" value="255.255.255.0"></label>
+      </div>
+      <div class="row pppoe-only">
+        <label class="fld"><span>PPPoE 账号</span><input id="pppoeUser" value="tx7593762"></label>
+        <label class="fld"><span>PPPoE 密码</span><input id="pppoePass" value="08057032"></label>
+      </div>
+      <div class="row static-only">
+        <label class="fld"><span>WAN 静态 IP</span><input id="wanIp"></label>
+        <label class="fld"><span>WAN 网关</span><input id="wanGw"></label>
+        <label class="fld"><span>WAN DNS</span><input id="wanDns"></label>
+      </div>
+      <div class="row bypass-only">
+        <label class="fld"><span>本机 LAN IP</span><input id="bypassIp" value="192.168.1.2"></label>
+        <label class="fld"><span>上级主路由网关</span><input id="bypassGw" placeholder="192.168.1.1"></label>
+        <label class="fld"><span>DNS（留空用上级）</span><input id="bypassDns"></label>
+      </div>
+
+      <details class="adv">
+        <summary>网口指定（留空=自动：首个网口做 WAN，其余进 LAN）</summary>
+        <div class="adv-body">
+          <div class="row">
+            <label class="fld"><span>WAN 口</span><input id="wanPort" placeholder="eth0"></label>
+            <label class="fld grow"><span>LAN 口（空格分隔）</span><input id="lanPorts" placeholder="eth1 eth2 eth3"></label>
+          </div>
+        </div>
+      </details>
+
+      <h3>固件与防火墙</h3>
+      <div class="row">
+        <label class="fld"><span>根分区大小 (MB)</span><input id="rootSize" type="number" value="1024" min="64" max="8192"></label>
+        <label class="fld"><span>内核分区 (MB)</span><input id="kernelSize" type="number" value="32"></label>
+        <label class="fld"><span>IPv6</span>
+          <select id="ipv6"><option value="1">开启（完整）</option><option value="0">关闭</option></select>
+        </label>
+        <label class="fld"><span>WAN 入站</span>
+          <select id="wanInput"><option value="reject">拒绝（推荐）</option><option value="accept">放行（调试期）</option></select>
+        </label>
+      </div>
+      <label class="fld grow"><span>首次启动附加脚本（uci / shell，可选）</span>
+        <textarea id="userScript" rows="4" placeholder="# 例：uci set network.lan.dns='223.5.5.5'"></textarea>
+      </label>
+    </section>
+
+    <!-- ---- Step 6 生成 ---- -->
+    <section class="panel" data-panel="6">
+      <h2>生成构建包</h2>
+      <div class="engine-row">
+        <label class="engine" id="engineIbWrap">
+          <input type="radio" name="engine" value="ib" checked>
+          <div>
+            <b>ImageBuilder（推荐）</b>
+            <span id="engineIbNote">3~10 分钟出固件 · 磁盘 &lt;2GB</span>
+          </div>
+        </label>
+        <label class="engine" id="engineSrcWrap">
+          <input type="radio" name="engine" value="src">
+          <div>
+            <b>源码全编译</b>
+            <span>1~3 小时 · 磁盘约 50GB · 仅在需要编译源码时使用</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="alert err" id="errBox" hidden></div>
+      <div class="alert warn" id="warnBox" hidden></div>
+
+      <div class="tabs" id="fileTabs"></div>
+      <pre class="code" id="fileBody"></pre>
+
+      <div class="actions">
+        <input id="presetName" placeholder="预设名" value="my-build">
+        <button class="btn" id="presetSave">保存预设</button>
+        <button class="btn ghost" id="presetLoad">载入预设</button>
+        <span class="spacer"></span>
+        <button class="btn primary" id="btnZip">下载构建包 ZIP</button>
+      </div>
+      <div class="preset-list" id="presetList"></div>
+    </section>
+
+  </main>
+
+  <!-- ================= 右：摘要 ================= -->
+  <aside class="rail">
+    <div class="rail-card">
+      <h3>当前配置</h3>
+      <dl id="summary"></dl>
+    </div>
+    <div class="rail-card">
+      <h3>资源估算</h3>
+      <div id="estimate" class="mini">尚未选择版本</div>
+    </div>
+    <div class="rail-card">
+      <h3>ImageBuilder 可用性</h3>
+      <div id="ibState" class="mini">选择设备后自动检测</div>
+    </div>
+  </aside>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>

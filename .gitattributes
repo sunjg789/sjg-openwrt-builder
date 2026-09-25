@@ -1,0 +1,9 @@
+# 统一换行符，避免 Windows 检出时把 shell 脚本变 CRLF
+* text=auto eol=lf
+
+*.js   text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
+*.md   text eol=lf
+*.json text eol=lf
+*.bat  text eol=crlf
