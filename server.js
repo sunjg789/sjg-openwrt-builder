@@ -10,6 +10,9 @@
  *   GET  /api/profiles?distro=&version=&target=&sub=     该子目标的全部设备 profile
  *   GET  /api/packages?distro=&version=&arch=            该版本软件索引 + 可用插件清单（随版本变换）
  *   GET  /api/ib?distro=&version=&target=&sub=           ImageBuilder 可用性 / 真实下载地址
+ *   GET  /api/images?distro=&version=&target=&sub=&profile=
+ *                                                        该 profile 的**官方预编译固件**清单
+ *                                                        （以上游 sha256sums 为权威来源，附 SHA256）
  *   GET  /api/imm-plugins?series=                        内置的版本专属插件清单（24.10 / 25.12）
  *   POST /api/repo/test                                  校验第三方软件源是否可用
  *   POST /api/preview                                    生成全部产物预览
@@ -127,6 +130,13 @@ const server = http.createServer(async (req, res) => {
       const distro = q('distro'), version = q('version'), target = q('target'), sub = q('sub');
       if (!target || !sub) return json(res, 400, { error: '缺少 target/sub' });
       return json(res, 200, await U.getProfiles(distro, version, target, sub, q('refresh') === '1'));
+    }
+
+    if (req.method === 'GET' && u.pathname === '/api/images') {
+      const distro = q('distro'), version = q('version'), target = q('target'), sub = q('sub');
+      const profile = q('profile');
+      if (!target || !sub || !profile) return json(res, 400, { error: '缺少 target/sub/profile' });
+      return json(res, 200, await U.getImageList(distro, version, target, sub, profile, q('refresh') === '1'));
     }
 
     if (req.method === 'GET' && u.pathname === '/api/packages') {

@@ -96,6 +96,16 @@
         </label>
       </div>
       <div id="deviceInfo" class="info-card"></div>
+
+      <!-- 官方预编译固件：不含自定义插件，但是真实可刷写的原版镜像 -->
+      <div id="officialImagesWrap" class="dl-block" hidden>
+        <div class="dl-head">
+          <h3>官方预编译固件</h3>
+          <span class="mini">上游已构建好的原版镜像，<b>不含</b>你在第 4 步勾选的插件</span>
+        </div>
+        <div id="officialImages" class="img-list"></div>
+        <div id="officialTools" class="img-list"></div>
+      </div>
     </section>
 
     <!-- ---- Step 4 插件 ---- -->
@@ -211,6 +221,9 @@
     <!-- ---- Step 6 生成 ---- -->
     <section class="panel" data-panel="6">
       <h2>生成构建包</h2>
+      <p class="hint">本机<b>不执行编译</b>：OpenWrt 官方只支持在 GNU/Linux（原生或虚拟化）上构建，
+        Windows 原生文件系统大小写不敏感，官方明确不推荐。这里产出的是<b>拿到 Linux 主机上跑的构建套件</b>。
+        若你要的是现成镜像（不含自定义插件），请回到<b>第 3 步「官方预编译固件」</b>直接下载。</p>
       <div class="engine-row">
         <label class="engine" id="engineIbWrap">
           <input type="radio" name="engine" value="ib" checked>
@@ -239,7 +252,7 @@
         <button class="btn" id="presetSave">保存预设</button>
         <button class="btn ghost" id="presetLoad">载入预设</button>
         <span class="spacer"></span>
-        <button class="btn primary" id="btnZip">下载构建包 ZIP</button>
+        <button class="btn primary" id="btnZip">下载构建包 ZIP（非固件）</button>
       </div>
       <div class="preset-list" id="presetList"></div>
     </section>

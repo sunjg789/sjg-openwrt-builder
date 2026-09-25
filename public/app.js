@@ -249,6 +249,59 @@ async function onDevicePicked() {
     ${p && p.images && p.images.length ? `<div class="kv"><span>可用镜像</span><b>${p.images.map((i) => i.type).join(', ')}</b></div>` : ''}`;
   $('#profileSel').value = state.profile;
   renderSummary();
+  loadOfficialImages();
+}
+
+// ---------------------------------------------------------------- 官方预编译固件
+
+// 本机无法编译（OpenWrt 官方只支持 GNU/Linux，见 README「已知边界」），
+// 但上游每个子目标都备好了现成镜像——这里把它们列出来直接下载，
+// 并以上游 sha256sums 为唯一权威来源（profiles.json 的 images[] 缺 .gz 后缀会 404）。
+async function loadOfficialImages() {
+  const wrap = $('#officialImagesWrap');
+  const box = $('#officialImages');
+  const tools = $('#officialTools');
+  if (!state.profile || !state.target || !state.subtarget) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+  box.innerHTML = '<div class="mini"><span class="spin"></span> 读取官方固件清单…</div>';
+  tools.innerHTML = '';
+  try {
+    const d = await api(`/api/images?distro=${state.distro}&version=${encodeURIComponent(state.version)}`
+      + `&target=${encodeURIComponent(state.target)}&sub=${encodeURIComponent(state.subtarget)}`
+      + `&profile=${encodeURIComponent(state.profile)}`);
+    if (!d.ok || !d.images.length) {
+      box.innerHTML = `<div class="mini">${d.note || '该设备上游没有提供固件文件'}</div>`;
+      return;
+    }
+    box.innerHTML = d.images.map((i) => `
+      <div class="img-row">
+        <a class="img-name" href="${i.url}" target="_blank" rel="noopener">${i.name}</a>
+        <span class="img-labels">${i.labels.map((l) => `<span class="tag">${l}</span>`).join('')}</span>
+        <span class="img-tools">
+          <a class="btn sm" href="${i.url}" target="_blank" rel="noopener">下载</a>
+          <button class="btn sm" data-sha="${i.sha256}">复制 SHA256</button>
+        </span>
+      </div>`).join('');
+    tools.innerHTML = d.tools.length ? d.tools.map((t) => `
+      <div class="img-row">
+        <a class="img-name" href="${t.url}" target="_blank" rel="noopener">${t.name}</a>
+        <span class="img-labels">${t.labels.map((l) => `<span class="tag">${l}</span>`).join('')}</span>
+        <span class="img-tools">
+          <a class="btn sm" href="${t.url}" target="_blank" rel="noopener">下载</a>
+        </span>
+      </div>`).join('') + `<p class="dl-hint">以上工具包只能在 x86_64 Linux 上运行。想要带上自定义插件的固件，
+        就把它的地址和你选好的配置一起丢给一台 Linux / 云主机，或直接沿用站点生成的 GitHub Actions 工作流。</p>` : '';
+    $$('#officialImages [data-sha], #officialTools [data-sha]').forEach((b) => {
+      b.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(b.dataset.sha);
+          toast('SHA256 已复制');
+        } catch (e) { toast('复制失败，请手动选取', true); }
+      };
+    });
+  } catch (e) {
+    box.innerHTML = `<div class="mini bad">读取失败：${e.message}</div>`;
+  }
 }
 
 async function checkIB() {

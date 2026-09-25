@@ -137,7 +137,32 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   check(doc.querySelectorAll('#fileTabs .chip').length > 0, `产物文件页签 ${doc.querySelectorAll('#fileTabs .chip').length} 个`);
   check((doc.querySelector('#fileBody').textContent || '').length > 50, `首个产物正文 ${(doc.querySelector('#fileBody').textContent || '').length} 字符`);
 
-  console.log('\n=== G. 降级：版本元数据库不可用（回归用例）===');
+  console.log('\n=== G. 官方预编译固件下载 ===');
+  // sha256sums 要现场抓取，等它落地
+  const imgRows = () => Array.from(doc.querySelectorAll('#officialImages .img-row'));
+  for (let i = 0; i < 120; i++) {
+    await sleep(500);
+    const t = doc.querySelector('#officialImages').textContent || '';
+    if (imgRows().length || /失败|没有|未匹配|无法确认/.test(t)) break;
+  }
+  const wrap = doc.querySelector('#officialImagesWrap');
+  check(!wrap.hidden, '第 3 步的「官方预编译固件」区块已显示');
+  const rows = imgRows();
+  check(rows.length > 0, `固件清单 ${rows.length} 条`);
+  const first = rows[0] && rows[0].querySelector('a.img-name');
+  check(!!first && /^https:\/\/downloads\./.test(first.href), `下载地址指向官方：${first ? first.getAttribute('href').split('/')[2] : '无'}`);
+  check(rows.every((r) => !!r.querySelector('[data-sha]')), '每条都带可复制的 SHA256');
+  check(rows.every((r) => (r.querySelector('[data-sha]').dataset.sha || '').length === 64), 'SHA256 均为 64 位十六进制');
+  const toolRows = Array.from(doc.querySelectorAll('#officialTools .img-row'));
+  check(toolRows.length > 0, `构建工具包 ${toolRows.length} 个（ImageBuilder / SDK）`);
+
+  // 抽一条做真实可达性校验——profiles.json 的名称缺 .gz 会直接 404，这里必须是 200
+  if (first) {
+    const head = await fetch(first.getAttribute('href'), { method: 'HEAD' });
+    check(head.status === 200, `抽查链接真实可用：HTTP ${head.status} · …${first.textContent.slice(-28)}`);
+  }
+
+  console.log('\n=== H. 降级：版本元数据库不可用（回归用例）===');
   // 之前这里的真实崩溃：服务端不可达时返回 profiles:{}（对象），前端 `|| []` 挡不住，
   // 走到 for...of 直接 TypeError，整条加载链炸掉。用不存在的版本复现同样的空数据路径。
   const vs = doc.querySelector('#versionSel');

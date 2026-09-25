@@ -116,6 +116,7 @@ openwrt-custom-builder/
 | GET | `/api/subtargets?...&target=` | 子架构列表 |
 | GET | `/api/profiles?...&target=&sub=` | 设备 profile 列表（含 package 架构 / 内核版本 / 设备专属包） |
 | GET | `/api/packages?...&arch=` | 该版本软件索引 + 可用插件清单 |
+| GET | `/api/images?distro=&version=&target=&sub=&profile=` | 官方预编译固件清单（基于上游 sha256sums，附 SHA256 + 用途标签） |
 | GET | `/api/ib?...&target=&sub=` | ImageBuilder 真实下载地址探测 |
 | GET | `/api/imm-plugins?series=` | 内置的版本专属插件清单 |
 | POST | `/api/repo/test` | 校验第三方软件源是否可用 |
@@ -145,9 +146,32 @@ openwrt-custom-builder/
 - 你的公开插件清单 `sunjg789/sjg-openwrt-packages`（`plugins.conf`，46 条第三方插件带真实上游地址）
 - 上游实时元数据：`downloads.openwrt.org`、`downloads.immortalwrt.org`
 
+## 为什么站点本身不直接吐固件？
+
+因为**编译这件事在 Windows 上跑不了**：
+
+- OpenWrt 官方明确只支持 **GNU/Linux（原生或虚拟化）**，macOS 与 WSL 都属于「有人成功但非官方支持」；
+  官方文档更直接点名——**不要**在 Windows 原生文件系统上构建（大小写不敏感会导致诡异失败）。
+- 源码全编译需要 50GB 磁盘与 1~3 小时；ImageBuilder 虽然只要分钟级，但它的分发包
+  `…-Linux-x86_64.tar.zst` **只能跑在 x86_64 Linux 上**。
+- 所以本站定位是「**生成器**」：把你的选择固化成一整套可在 Linux 上执行的构建脚本，
+  而不是在本机调用交叉工具链。
+
+要拿到固件，有三条路：
+
+| 方式 | 得到什么 | 怎么用 |
+|---|---|---|
+| **第 3 步「官方预编译固件」直下** | 上游现成镜像，**不含你勾选的插件** | 选完设备后点击下载，附 SHA256 可校验 |
+| **把构建包丢给 Linux 主机** | 带自定义插件的完整固件 | 下载 ZIP → 在 Linux/云主机上 `bash build.sh` |
+| **GitHub Actions 在线编译** | 带自定义插件的完整固件，不用自己备机器 | ZIP 内已含 `.github/workflows/*.yml`，推到仓库后在 Actions 页手动触发，产物在 Artifacts |
+
+第一条已在本站实现，数据源是上游 `sha256sums`（**不是** `profiles.json` 的 `images[]`——
+后者缺 `.gz` 后缀，实测会 404）。
+
 ## 已知边界
 
 - 站点只做**生成**，不实际执行编译；编译由产出的 `build.sh` / `.github/workflows/*.yml` 在 Linux 侧完成
+- 第 3 步下载的官方固件是**未经定制的原版**，插件/网络配置要刷完后手动安装
 - ImageBuilder **只能打包软件源里真实存在的包**。第三方插件需要先在「第三方软件源」里配上对应仓库根目录
 - 资源估算是经验量级，用于可行性判断，不是承诺
 - 服务只监听 `127.0.0.1`，无鉴权；要放局域网请自行加反代

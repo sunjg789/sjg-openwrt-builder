@@ -79,6 +79,22 @@ textarea{resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,
 .distro.skel span{width:80%;height:10px;margin-top:9px;border-radius:6px}
 @keyframes sh{from{background-position:100% 50%}to{background-position:0 50%}}
 
+/* ---------- 官方固件下载 ---------- */
+.dl-block{margin-top:16px;border:1px solid var(--line);border-radius:var(--radius);padding:14px;background:#fff}
+.dl-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:10px}
+.dl-head h3{margin:0;font-size:14px}
+.img-list{display:flex;flex-direction:column;gap:8px}
+.img-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:9px 11px;border:1px solid var(--line);
+  border-radius:9px;background:#fafbfc}
+.img-row:hover{border-color:#c9d1da;background:#f6f8fa}
+.img-name{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--brand);
+  text-decoration:none;word-break:break-all;flex:1 1 340px;min-width:0}
+.img-name:hover{text-decoration:underline}
+.img-labels{display:flex;flex-wrap:wrap;gap:5px}
+.img-row .tag{font-size:11px;padding:1px 7px}
+.img-tools{margin-left:auto;display:flex;gap:6px}
+.dl-hint{font-size:11.5px;color:var(--muted);line-height:1.7;margin:8px 0 0}
+
 /* ---------- 信息卡 ---------- */
 .info-card{margin-top:14px;border:1px solid var(--line);border-radius:var(--radius);padding:14px;background:#fafbfc;
   display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
