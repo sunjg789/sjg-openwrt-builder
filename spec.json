@@ -1,0 +1,37 @@
+{
+  "engine": "ib",
+  "distro": "immortalwrt",
+  "version": "25.12.2",
+  "refPolicy": "branch",
+  "target": "x86",
+  "subtarget": "64",
+  "profile": "generic",
+  "archPackages": "x86_64",
+  "packages": [],
+  "packagesSizeMB": 0,
+  "excludes": [],
+  "customRepos": [],
+  "ipv6": true,
+  "wanInput": "reject",
+  "userScript": "",
+  "image": {
+    "rootfsSizeMB": 512,
+    "kernelSizeMB": 32
+  },
+  "system": {
+    "hostname": "SJGWrt",
+    "loginName": "sjg",
+    "password": "sunjg789",
+    "loginPassword": "sunjg789",
+    "timezone": "CST-8",
+    "zonename": "Asia/Shanghai"
+  },
+  "network": {
+    "mode": "lan",
+    "lanIp": "192.168.6.1",
+    "lanNetmask": "255.255.255.0",
+    "wanProto": "dhcp",
+    "pppoeUser": "",
+    "pppoePass": ""
+  }
+}

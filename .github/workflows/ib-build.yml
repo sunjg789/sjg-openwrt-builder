@@ -1,0 +1,90 @@
+name: IB-immortalwrt-25.12.2-x86-64
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['files/**', '.github/workflows/**']
+
+permissions:
+  contents: write
+
+jobs:
+  ib:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 ImageBuilder 依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zstd xz-utils build-essential libncurses-dev zlib1g-dev \
+            gawk git gettext libssl-dev python3 python3-distutils rsync unzip file wget time \
+            qemu-utils genisoimage
+          # qemu-utils 提供 qemu-img：x86 等目标在 make image 时会顺带产出 qcow2/vdi/vmdk/vhdx，
+          # 缺了它 make 会在最后一步以 Error 1 告终（整轮失败，产物连带拿不到）。
+          command -v qemu-img >/dev/null 2>&1 && qemu-img --version | head -1
+          # OpenWrt 的 Makefile 里 ISO 那一步写死了 mkisofs，而 Ubuntu 只提供 genisoimage
+          #（jammy 里根本没有 mkisofs 这个包），不补链接会在 *.iso 上以 Error 127 收尾。
+          command -v mkisofs >/dev/null 2>&1 || sudo ln -sf "$(command -v genisoimage)" /usr/local/bin/mkisofs
+          mkisofs --version | head -1
+          # GitHub 22.04 runner 自带 make 4.3+，但仍要确认
+          make --version | head -1
+
+      - name: 下载并解包 ImageBuilder
+        id: ib
+        run: |
+          set -e
+          wget -q --tries=3 -O ib.tar 'https://downloads.immortalwrt.org/releases/25.12.2/targets/x86/64/immortalwrt-imagebuilder-25.12.2-x86-64.Linux-x86_64.tar.zst'
+          mkdir -p _ib && tar --zstd -xf ib.tar -C _ib
+          IBDIR="$(find _ib -maxdepth 1 -type d -name '*-imagebuilder-*' | head -n1)"
+          [ -n "$IBDIR" ] || IBDIR="_ib"
+          echo "ibdir=$IBDIR" >> $GITHUB_OUTPUT
+
+      - name: 附加第三方软件源
+        run: echo "未配置第三方源，跳过"
+
+      - name: 跳过虚拟磁盘格式（qcow2 / vdi / vmdk / vhdx）
+        # x86 的 ImageBuilder 默认会额外产出这几种虚拟盘镜像，每份都是一块完整磁盘：
+        # 产物从几十 MB 直接飙到近 400MB（实测 386MB），下载要按小时计；
+        # 而且它们恰好是两次构建失败的源头（缺 qemu-img / 缺 mkisofs）。
+        # 刷机要的是 combined(-efi) 之类的整机镜像，这里先把这些格式关掉。
+        run: |
+          set -e
+          cd ${{ steps.ib.outputs.ibdir }}
+          touch .config
+          for k in QCOW2 VDI VMDK VHDX; do
+            if grep -qE "^#? *CONFIG_${k}_IMAGES" .config; then
+              sed -i "s/^#\? *CONFIG_${k}_IMAGES=.*/CONFIG_${k}_IMAGES=n/" .config
+            else
+              echo "CONFIG_${k}_IMAGES=n" >> .config
+            fi
+          done
+          grep -E "CONFIG_(QCOW2|VDI|VMDK|VHDX)_IMAGES" .config || true
+
+      - name: 打包固件
+        run: |
+          set -e
+          cd ${{ steps.ib.outputs.ibdir }}
+          make image \
+            PROFILE='generic' \
+            PACKAGES='' \
+            FILES='${{ github.workspace }}/files' \
+            ROOTFS_PARTSIZE='512' \
+            V=s
+
+      - name: 收集产物
+        run: |
+          mkdir -p out
+          # 只收整机镜像，排除虚拟盘格式与未压缩的裸 .img（后者同样是按 GB 计）
+          find ${{ steps.ib.outputs.ibdir }}/bin/targets -type f \
+            \( -name '*.img.gz' -o -name '*.bin' -o -name '*.iso' -o -name '*.tar.gz' \) \
+            ! -name '*.qcow2' ! -name '*.vdi' ! -name '*.vmdk' ! -name '*.vhdx' \
+            -exec cp -v {} out/ \; || true
+          du -sh out/
+          ls -lh out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ github.run_id }}
+          path: out/*
+          if-no-files-found: error
