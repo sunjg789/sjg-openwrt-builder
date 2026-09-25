@@ -644,7 +644,154 @@ function bind() {
     loadPresets();
   };
   $('#presetLoad').onclick = loadPresets;
+
+  $('#ghSave').onclick = ghSave;
+  $('#ghStart').onclick = ghStart;
   onNet();
+}
+
+// ---------------------------------------------------------------- 在线构建（GitHub Actions）
+
+const GH_STATE = {
+  pushing: ['推送构建包到 GitHub…', 'run'],
+  dispatching: ['已推送，正在触发工作流…', 'run'],
+  queued: ['已触发，等待 runner 接单…', 'run'],
+  in_progress: ['正在编译，这一步通常要几分钟到一小时', 'run'],
+  completed: ['已完成', 'done'],
+  failed: ['失败', 'fail'],
+  unknown: ['触发了但查不到运行记录', 'fail'],
+};
+
+async function ghLoadConfig() {
+  try {
+    const c = await api('/api/build/config');
+    if (c.repo) $('#ghRepo').value = c.repo;
+    $('#ghAccount').textContent = c.hasToken
+      ? `已保存 Token（来源：${c.source === 'env' ? '环境变量' : '本地文件'}）`
+      : '未配置，请先填 Token 并保存';
+  } catch (e) { /* 首屏失败无所谓，用户点按钮时会再提示 */ }
+}
+
+async function ghSave() {
+  const repo = $('#ghRepo').value.trim();
+  const token = $('#ghToken').value.trim();
+  if (!repo) return toast('请填 owner/repo 形式的仓库地址', true);
+  if (!token && !/已保存/.test($('#ghAccount').textContent)) return toast('请填写 Token', true);
+  $('#ghAccount').textContent = '校验中…';
+  try {
+    const r = await post('/api/build/config', { repo, token: token || undefined });
+    if (!r.ok) return toast('保存失败：' + r.error, true);
+    $('#ghToken').value = '';
+    $('#ghAccount').textContent = `已保存 · 身份 ${r.login} · 仓库 ${r.repo}`;
+    toast('凭据校验通过');
+  } catch (e) { toast('保存失败：' + e.message, true); }
+}
+
+async function ghStart() {
+  const box = $('#ghStatus');
+  if (!state.version || !state.target) return toast('请先把版本和设备选完', true);
+  box.classList.add('on');
+  box.innerHTML = `<div class="gh-bar"><span class="spin"></span><span>生成构建包并推送到 GitHub…</span></div>`;
+  try {
+    const meta = await post('/api/build/start', buildSpec());
+    if (meta.error) throw new Error(meta.error);
+    window.__buildId = meta.id;
+    ghPoll();
+  } catch (e) {
+    box.innerHTML = `<div class="gh-bar"><span class="state fail">启动失败</span>
+      <span class="mini">${e.message}</span></div>`;
+    toast('在线构建启动失败', true);
+  }
+}
+
+let __polling = false;
+async function ghPoll() {
+  if (__polling) return;
+  __polling = true;
+  const box = $('#ghStatus');
+  const done = ['completed', 'failed', 'unknown'];
+  try {
+    for (let i = 0; i < 360; i++) { // 最多盯 30 分钟
+      const m = await api('/api/build/status?id=' + encodeURIComponent(window.__buildId));
+      ghRender(m);
+      // terminal 表示服务端已收尾（日志/产物都拉完），再轮询下去只是空转
+      if (done.includes(m.state) || m.terminal) break;
+      await new Promise((r) => setTimeout(r, 5000));
+    }
+  } catch (e) {
+    box.innerHTML = `<div class="gh-bar"><span class="state fail">状态查询中断</span>
+      <span class="mini">${e.message}</span></div>`;
+  } finally {
+    __polling = false;
+  }
+}
+
+/** 日志里含 <>，直接 innerHTML 会被当前标签吞掉 */
+function escHtml(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function ghRender(m) {
+  const [label, cls] = GH_STATE[m.state] || [m.state, 'run'];
+  const failed = m.state === 'failed' || (m.conclusion && m.conclusion !== 'success');
+  const headCls = failed ? 'fail' : (m.state === 'completed' ? 'done' : cls);
+
+  let html = `<div class="gh-bar">
+    <span class="state ${headCls}">${failed ? (m.state === 'failed' ? '失败' : '结束（结论 ' + m.conclusion + '）') : label}</span>
+    ${m.repo ? `<span class="mini">${m.repo} · ${m.summary.target}/${m.summary.subtarget}</span>` : ''}
+    <span class="spacer"></span>
+    ${m.runUrl ? `<a class="btn sm" href="${m.runUrl}" target="_blank" rel="noopener">在 GitHub 查看日志</a>` : ''}
+  </div>`;
+
+  if (m.error) html += `<div class="gh-bar" style="margin-top:8px"><span class="mini">${escHtml(m.error)}</span></div>`;
+
+  // 失败时把云端日志的报错行直接摊开：不用再去 GitHub 翻几百行 make 输出
+  if (failed && m.errorLines && m.errorLines.length) {
+    html += `<div class="gh-fail">
+      <div class="mini">失败原因（云端日志摘要 · ${escHtml(m.logFile || 'log')}）：</div>
+      <pre class="gh-log">${escHtml(m.errorLines.join('\n'))}</pre>
+      ${m.logTail ? `<details><summary class="mini">展开日志尾部（共 ${m.logLines} 行）</summary>
+        <pre class="gh-log">${escHtml(m.logTail)}</pre></details>` : ''}
+    </div>`;
+  }
+
+  // job / step 进度
+  if (m.jobs && m.jobs.length) {
+    html += '<div class="gh-steps">';
+    for (const j of m.jobs) {
+      for (const s of j.steps || []) {
+        const sc = s.conclusion === 'success' ? 'done' : s.conclusion === 'failure' ? 'fail' : (s.status === 'in_progress' ? 'run' : '');
+        html += `<div class="gh-step ${sc}"><span class="dot"></span>
+          <span class="nm">${s.name}</span>
+          <span class="mini">${sc === 'done' ? '完成' : sc === 'fail' ? '失败' : sc === 'run' ? '进行中' : '等待'}</span></div>`;
+      }
+    }
+    html += '</div>';
+  }
+
+  // 拉回本地的产物
+  if (m.files && m.files.length) {
+    html += '<div class="gh-steps" style="margin-top:9px">';
+    for (const f of m.files) {
+      if (f.error) {
+        html += `<div class="gh-step fail"><span class="dot"></span><span class="nm">${f.name}</span>
+          <span class="mini">拉取失败：${f.error}</span></div>`;
+        continue;
+      }
+      const url = `/api/build/file?id=${encodeURIComponent(m.id)}&name=${encodeURIComponent(f.file)}`;
+      html += `<div class="gh-step done"><span class="dot"></span>
+        <span class="nm">${f.name}<span class="mini"> · ${(f.size / 1048576).toFixed(1)} MB</span></span>
+        <a class="btn sm" href="${url}">下载到本地</a></div>`;
+    }
+    html += '</div>';
+  } else if (m.state === 'completed') {
+    html += `<div class="gh-bar" style="margin-top:8px"><span class="mini">${
+      m.logTail ? '工作流在中途失败，没有产出 Artifact（原因见上方摘要）。'
+        : '这次运行没有产出 Artifact（工作流可能在中途失败，建议点上方按钮看 GitHub 日志）。'
+    }</span></div>`;
+  }
+  $('#ghStatus').innerHTML = html;
+  $('#ghStatus').classList.add('on');
 }
 
 async function loadPresets() {
@@ -723,6 +870,7 @@ function markLoading(sel, text) {
   goto(1); // 首屏先落地，不等任何网络请求
   renderRepos();
   loadPresets();
+  ghLoadConfig();
 
   // 设备/插件就绪后自动跑一次预览。轮询要在加载链之前挂上，
   // 否则会被下面长达数十秒的元数据抓取挡住。

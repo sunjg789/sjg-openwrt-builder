@@ -255,6 +255,33 @@
         <button class="btn primary" id="btnZip">下载构建包 ZIP（非固件）</button>
       </div>
       <div class="preset-list" id="presetList"></div>
+
+      <!-- ---- 在线构建：push → workflow_dispatch → 轮询 → 拉回 Artifacts ---- -->
+      <div class="dl-block" id="cloudBuild">
+        <div class="dl-head">
+          <h3>在线构建（GitHub Actions）</h3>
+          <span class="mini">本机不编译，让 GitHub 的 runner 代劳：推送构建包 → 触发工作流 → 进度自动回传 → 固件拉回本地</span>
+        </div>
+        <div class="row">
+          <label class="fld grow">
+            <span>目标仓库</span>
+            <input id="ghRepo" placeholder="owner/repo，例如 sunjg789/sjg-openwrt-builder">
+          </label>
+          <label class="fld grow">
+            <span>Personal Access Token</span>
+            <input id="ghToken" type="password" placeholder="需要 repo + workflow 权限；留空表示沿用已保存的" autocomplete="off">
+          </label>
+        </div>
+        <div class="row">
+          <button class="btn" id="ghSave">保存凭据</button>
+          <button class="btn primary" id="ghStart">推送并开始构建</button>
+          <span class="spacer"></span>
+          <span id="ghAccount" class="mini">未配置</span>
+        </div>
+        <p class="dl-hint">构建的产物来自 GitHub Actions 的 Artifact，会在任务结束后自动下载到本机
+          <code>out/builds/</code>。Token 只存在服务端 <code>config/gh.json</code>（已在 .gitignore 中），不会回传给页面。</p>
+        <div id="ghStatus" class="gh-status"></div>
+      </div>
     </section>
 
   </main>

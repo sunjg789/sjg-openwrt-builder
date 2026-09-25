@@ -11,12 +11,15 @@ const path = require('path');
 const { JSDOM, VirtualConsole } = require('jsdom');
 
 const ROOT = __dirname;
-const BASE = 'http://127.0.0.1:8730';
+// 服务地址可覆盖：PORT=8740 node server.js && BASE=http://127.0.0.1:8740 node selftest-ui.js
+const BASE = process.env.BASE || 'http://127.0.0.1:8730';
 let fail = 0;
 const check = (ok, msg) => {
   console.log(`  ${ok ? '\x1b[32m✓\x1b[0m' : '\x1b[31m✗\x1b[0m'} ${msg}`);
   if (!ok) fail++;
 };
+/** 环境不具备时的跳过：不算失败，但要显式打出来，避免 silently 消失 */
+const skip = (msg) => console.log(`  \x1b[33m○\x1b[0m ${msg}`);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -55,7 +58,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   // 注意：app.js 顶层 const 是词法绑定，不会挂到 window 上，
   // 所以追加一行把它暴露出来供断言读取（仅测试用）。
   const code = fs.readFileSync(path.join(ROOT, 'public/app.js'), 'utf8')
-    + '\n;window.__expose = () => ({ state, curCat, refreshPreview, goto, buildSpec });';
+    + '\n;window.__expose = () => ({ state, curCat, refreshPreview, goto, buildSpec, ghRender });';
   const s = doc.createElement('script');
   s.textContent = code;
   doc.body.appendChild(s);
@@ -156,10 +159,21 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const toolRows = Array.from(doc.querySelectorAll('#officialTools .img-row'));
   check(toolRows.length > 0, `构建工具包 ${toolRows.length} 个（ImageBuilder / SDK）`);
 
-  // 抽一条做真实可达性校验——profiles.json 的名称缺 .gz 会直接 404，这里必须是 200
+  // 抽一条做真实可达性校验——profiles.json 的名称缺 .gz 会直接 404，这里必须是 200。
+  //
+  // 这是全脚本**唯一**直连外网的地方，必须自己做失败隔离：之前写成裸 await fetch，
+  // 网络一抖抛异常冒泡到最外层 catch → process.exit(2)，后面的 H、I 两组永远跑不到，
+  // 表现就是「测试莫名其妙停在 G 组」，重启和重装都救不了（问题根本不在安装上）。
   if (first) {
-    const head = await fetch(first.getAttribute('href'), { method: 'HEAD' });
-    check(head.status === 200, `抽查链接真实可用：HTTP ${head.status} · …${first.textContent.slice(-28)}`);
+    const url = first.getAttribute('href');
+    try {
+      const head = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(12000) });
+      check(head.status === 200, `抽查链接真实可用：HTTP ${head.status} · …${first.textContent.slice(-28)}`);
+    } catch (e) {
+      const host = (() => { try { return new URL(url).host; } catch (x) { return url; } })();
+      skip(`外网可达性抽查跳过（本机无法直连 ${host}）：${/timed out|timeout/i.test(e.message) ? '连接超时' : e.message}`);
+      skip('该用例依赖外网，与前端逻辑无关；H/I 两组继续运行');
+    }
   }
 
   console.log('\n=== H. 降级：版本元数据库不可用（回归用例）===');
@@ -178,6 +192,42 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   check(st3.target === '' && st3.profile === '', '下游选择已清空，不会带着脏 target 继续生成');
   const crash = errors.filter((e) => /TypeError|is not iterable|not a function/i.test(e));
   check(crash.length === 0, crash.length ? '出现崩溃：\n      ' + crash.join('\n      ') : '全程无 TypeError / is not iterable 崩溃');
+
+  console.log('\n=== I. 在线构建（GitHub Actions）面板 ===');
+  for (const id of ['#ghRepo', '#ghToken', '#ghSave', '#ghStart', '#ghStatus', '#ghAccount']) {
+    check(!!doc.querySelector(id), `在线构建控件 ${id} 存在`);
+  }
+  // 未选设备就点「开始构建」必须被拦住，而不是发一个必然失败的请求
+  doc.querySelector('#ghStart').dispatchEvent(new window.Event('click', { bubbles: true }));
+  const tEl = doc.querySelector('#toast');
+  check(!tEl.hidden && /先把版本和设备选完/.test(tEl.textContent),
+    `未选设备时的守卫提示：${tEl.textContent}`);
+
+  const ghRender = window.__expose().ghRender;
+  // 失败态：日志里混了 HTML 尖括号，必须转义后再塞进面板，否则会被当成标签吞掉
+  ghRender({
+    id: 't-1', repo: 'a/b', state: 'completed', conclusion: 'failure', logFile: '0_ib.txt', logLines: 999,
+    summary: { distro: 'immortalwrt', target: 'x86', subtarget: '64' },
+    runUrl: 'https://github.com/a/b/actions/runs/1',
+    errorLines: ['bash: line 1: mkisofs: <command> not found', 'make: *** [Makefile:357: image] Error 2'],
+    logTail: 'tail <body>', jobs: [], artifacts: [], files: [],
+  });
+  const failBox = doc.querySelector('#ghStatus .gh-fail');
+  check(!!failBox, '失败时渲染出原因摘要区块');
+  check(!doc.querySelector('#ghStatus').innerHTML.includes('<command>'),
+    '日志里的尖括号已转义，没有被当成标签');
+  check(/mkisofs/.test(failBox.textContent) && /Error 2/.test(failBox.textContent), '摘要包含真正的报错行');
+  check(!!doc.querySelector('#ghStatus details'), '提供「展开日志尾部」折叠区');
+
+  // 成功态：产物应变成可下载链接
+  ghRender({
+    id: 't-1', repo: 'a/b', state: 'completed', conclusion: 'success', summary: { target: 'x86', subtarget: '64' },
+    jobs: [], artifacts: [], files: [{ name: 'images.zip', file: 'images_zip.zip', size: 3 * 1048576 }],
+  });
+  const link = doc.querySelector('#ghStatus a[href*="/api/build/file"]');
+  check(!!link, `产物渲染为本地下载链接：${link ? link.getAttribute('href') : '无'}`);
+  check(!doc.querySelector('#ghStatus .gh-fail'), '成功态不再显示失败摘要');
+  check(!/没有产出 Artifact/.test(doc.querySelector('#ghStatus').textContent), '成功态不误报「没有产物」');
 
   console.log('\n=== 结果 ===');
   console.log(fail ? `\x1b[31m${fail} 项未通过\x1b[0m` : '\x1b[32m全部通过\x1b[0m');

@@ -3,6 +3,9 @@
 cache/
 out/
 presets/
+# 在线构建的 GitHub 凭据 gh.json 放在这里，含 token，绝不入库
+#（重申：行尾写注释会让整条规则失效，必须单独占一行）
+config/
 
 *.zip
 *.tar.gz

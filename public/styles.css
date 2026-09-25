@@ -94,6 +94,35 @@ textarea{resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,
 .img-row .tag{font-size:11px;padding:1px 7px}
 .img-tools{margin-left:auto;display:flex;gap:6px}
 .dl-hint{font-size:11.5px;color:var(--muted);line-height:1.7;margin:8px 0 0}
+.dl-hint code{background:#f2f4f7;border:1px solid var(--line);border-radius:4px;padding:1px 4px;font-size:11px}
+
+/* ---------- 在线构建状态 ---------- */
+.gh-status{margin-top:12px;display:none}
+.gh-status.on{display:block}
+.gh-bar{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:10px 12px;border:1px solid var(--line);
+  border-radius:9px;background:#fafbfc}
+.gh-bar .state{font-weight:600}
+.gh-bar .state.done{color:var(--ok)}
+.gh-bar .state.fail{color:var(--bad)}
+.gh-bar .state.run{color:var(--brand)}
+.gh-steps{margin-top:9px;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.gh-step{display:flex;align-items:center;gap:8px;padding:7px 11px;font-size:12px;border-top:1px solid var(--line)}
+.gh-step:first-child{border-top:0}
+.gh-step .dot{width:8px;height:8px;border-radius:50%;background:#d3d9e0;flex:none}
+.gh-step.done .dot{background:var(--ok)}
+.gh-step.run .dot{background:var(--brand)}
+.gh-step.fail .dot{background:var(--bad)}
+.gh-step .nm{flex:1 1 auto;word-break:break-all}
+.gh-step .mini{font-size:11px}
+
+/* 失败日志摘要 */
+.gh-fail{margin-top:8px;border:1px solid var(--bad);border-radius:var(--radius);padding:10px 12px;background:#fff6f6}
+.gh-fail details{margin-top:8px}
+.gh-fail summary{cursor:pointer}
+.gh-log{margin:8px 0 0;padding:9px 11px;border:1px solid var(--line);border-radius:6px;background:#f6f8fa;
+  color:#1f2430;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:11px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-all;
+  max-height:320px;overflow-y:auto}
 
 /* ---------- 信息卡 ---------- */
 .info-card{margin-top:14px;border:1px solid var(--line);border-radius:var(--radius);padding:14px;background:#fafbfc;

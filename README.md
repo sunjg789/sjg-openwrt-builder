@@ -124,6 +124,11 @@ openwrt-custom-builder/
 | POST | `/api/preview` | 生成全部产物预览 |
 | POST | `/api/zip` | 打包下载 |
 | GET/POST | `/api/preset/*` | 预设存取 |
+| GET/POST | `/api/build/config` | 在线构建凭据：`owner/repo` + Token（**读接口不回显 Token**） |
+| POST | `/api/build/start` | 生成构建包 → 推到专属分支 → 触发 Actions 运行，返回任务 id |
+| GET | `/api/build/status?id=` | 查询进度（job/step 级）；运行结束后自动拉回 Artifacts 与失败日志 |
+| GET | `/api/build/list` | 历史在线构建 |
+| GET | `/api/build/file?id=&name=` | 下载已拉回本地的产物 zip |
 
 ## 生成器里已固化的排障规则（全部来自实测，不是猜测）
 
@@ -146,6 +151,36 @@ openwrt-custom-builder/
 - 你的公开插件清单 `sunjg789/sjg-openwrt-packages`（`plugins.conf`，46 条第三方插件带真实上游地址）
 - 上游实时元数据：`downloads.openwrt.org`、`downloads.immortalwrt.org`
 
+## 在线构建闭环（站内一键 → GitHub Actions → 产物回本地）
+
+第 6 步的「在线构建」把上面第三条路做成了闭环，不用手动 fork / 手动推工作流：
+
+```
+填一次 owner/repo + Token → 点「开始在线构建」
+  ① 生成构建包（含 .github/workflows/*.yml）
+  ② Git Data API 推到孤儿分支 build/<distro>-<ver>-<target>-<sub>-<stamp>
+  ③ 触发运行（dispatch 优先，push 兜底）
+  ④ 每 5 秒轮询 job / step 进度，前端按步骤着色
+  ⑤ 运行结束 → 自动把 Artifacts 拉回 out/builds/<id>/，页面上直接「下载到本地」
+  ⑥ 若失败 → 拉回云端日志，面板里摊开报错摘要 + 可折叠的日志尾部
+```
+
+落地时有几个坑，都已固化在代码里（`lib/gh.js` / `lib/build.js`）：
+
+| 现象 | 真实原因 | 处理 |
+|---|---|---|
+| `workflow_dispatch` 返回 404 | **只认默认分支上注册的工作流**，推到临时分支的 yml 一律不认 | 先探测 `isRegisteredOnDefault()`，未注册就走 `push` 触发器（此时**不能**加 `[skip ci]`） |
+| 加了 `[skip ci]` 后一个 run 都没有 | 注册状态未必准确，dispatch 说成功但没跑 | 轮询不到 run 时自动去掉 `[skip ci]` 再推一次兜底 |
+| 明明跑完了却查不到 run | 用 `created>=` 过滤时，本机 `Date.now()` 与 GitHub `created_at` 有偏差 | **完全不用时间过滤**，取该独享分支最新的 run |
+| 两个 run 同时跑，分钟数翻倍 | push 触发器与 dispatch 各起一个 | 走 dispatch 时才带 `[skip ci]` |
+| Artifact 下载 302 拿到 HTML | REST 接口返回跳转地址 | 手动跟 `Location`，并校验 zip 魔数 `PK` |
+| 失败只见 `Process completed with exit code 2` | 真正的报错埋在几百行 make 输出里 | 拉 `/actions/runs/<id>/logs`（**零依赖手写 ZIP 解析**），提炼报错行后在前端显示 |
+
+依赖也是我们踩出来的补齐项（`lib/genib.js` 的 apt 那一步）：
+
+- `qemu-utils` → 提供 `qemu-img`。x86 目标会顺带产出 qcow2/vdi/vmdk/vhdx，缺了它 make 在**最后一步**才 `Error 1`，整轮白跑。
+- `genisoimage` + `mkisofs` 软链 → 产出 ISO 那一步写死了 `mkisofs`，而 Ubuntu 22.04 **根本没有叫 `mkisofs` 的包**（写了会让整段 `apt-get install` 失败），所以只能装 `genisoimage` 再补链接。
+
 ## 为什么站点本身不直接吐固件？
 
 因为**编译这件事在 Windows 上跑不了**：
@@ -163,7 +198,7 @@ openwrt-custom-builder/
 |---|---|---|
 | **第 3 步「官方预编译固件」直下** | 上游现成镜像，**不含你勾选的插件** | 选完设备后点击下载，附 SHA256 可校验 |
 | **把构建包丢给 Linux 主机** | 带自定义插件的完整固件 | 下载 ZIP → 在 Linux/云主机上 `bash build.sh` |
-| **GitHub Actions 在线编译** | 带自定义插件的完整固件，不用自己备机器 | ZIP 内已含 `.github/workflows/*.yml`，推到仓库后在 Actions 页手动触发，产物在 Artifacts |
+| **GitHub Actions 在线编译** | 带自定义插件的完整固件，不用自己备机器 | 第 6 步「在线构建」填一次仓库 + Token，站点自动推分支、触发、轮询并把 Artifacts 拉回本地（详见下一章） |
 
 第一条已在本站实现，数据源是上游 `sha256sums`（**不是** `profiles.json` 的 `images[]`——
 后者缺 `.gz` 后缀，实测会 404）。
@@ -172,6 +207,8 @@ openwrt-custom-builder/
 
 - 站点只做**生成**，不实际执行编译；编译由产出的 `build.sh` / `.github/workflows/*.yml` 在 Linux 侧完成
 - 第 3 步下载的官方固件是**未经定制的原版**，插件/网络配置要刷完后手动安装
+- 在线构建的 Token 明文存在 `config/gh.json`（该目录已在 `.gitignore`），用完建议在 GitHub Settings 里吊销
+- 在线构建会把每个任务推成一个 `build/*` 分支，跑完要手动删，否则仓库里分支会越攒越多
 - ImageBuilder **只能打包软件源里真实存在的包**。第三方插件需要先在「第三方软件源」里配上对应仓库根目录
 - 资源估算是经验量级，用于可行性判断，不是承诺
 - 服务只监听 `127.0.0.1`，无鉴权；要放局域网请自行加反代

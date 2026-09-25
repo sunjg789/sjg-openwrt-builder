@@ -17,6 +17,12 @@
  *   POST /api/repo/test                                  校验第三方软件源是否可用
  *   POST /api/preview                                    生成全部产物预览
  *   POST /api/zip                                        打包下载
+ *   GET  /api/build/config                               在线构建的凭据 / 仓库配置
+ *   POST /api/build/config                               保存并校验 GitHub Token + 仓库
+ *   POST /api/build/start                                推构建包到 GitHub 并触发 workflow_dispatch
+ *   GET  /api/build/status?id=                           查询进度（run 结束会自动拉回 Artifacts）
+ *   GET  /api/build/list                                 历史在线构建
+ *   GET  /api/build/file?id=&name=                       下载已拉回本地的产物 zip
  *   GET|POST /api/preset/...                             预设存取
  */
 const http = require('http');
@@ -31,6 +37,7 @@ const P = require('./lib/plugins');
 const { generateIB, estimateIB } = require('./lib/genib');
 const { generateSRC, estimateSRC } = require('./lib/gensrc');
 const { createZip } = require('./lib/zip');
+const B = require('./lib/build');
 
 const ROOT = __dirname;
 const PUBLIC = path.join(ROOT, 'public');
@@ -283,6 +290,63 @@ const server = http.createServer(async (req, res) => {
         'Content-Disposition': `attachment; filename="openwrt-${spec.distro}-${spec.version}-${spec.target}-${spec.subtarget}.zip"`,
       });
       return res.end(zip);
+    }
+
+    // ---------------- 在线构建（GitHub Actions 闭环）----------------
+    if (req.method === 'GET' && u.pathname === '/api/build/config') {
+      const c = B.readConfig();
+      return json(res, 200, {
+        hasToken: !!c.token, source: c.source, repo: c.repo, repoExample: 'owner/repo',
+      });
+    }
+
+    if (req.method === 'POST' && u.pathname === '/api/build/config') {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const saved = B.saveConfig({ token: body.token, repo: body.repo });
+      const c = B.readConfig();
+      let login = null;
+      try {
+        const { Gh } = require('./lib/gh');
+        login = await new Gh(c.token, c.repo).whoami();
+      } catch (e) { return json(res, 200, { ok: false, error: e.message }); }
+      return json(res, 200, { ok: true, login, repo: saved.repo });
+    }
+
+    if (req.method === 'POST' && u.pathname === '/api/build/start') {
+      const spec = JSON.parse((await readBody(req)) || '{}');
+      const ib = spec.target && spec.subtarget
+        ? await IB.resolveIbUrl(spec.distro, spec.version, spec.target, spec.subtarget)
+        : { ok: false, url: null, ext: null };
+      const files = spec.engine === 'src' ? await generateSRC(spec) : generateIB(spec, ib);
+      const meta = await B.startBuild(spec, files);
+      return json(res, 200, meta);
+    }
+
+    if (req.method === 'GET' && u.pathname === '/api/build/status') {
+      const meta = await B.getBuild(q('id'));
+      if (!meta) return json(res, 404, { error: '未找到该构建任务' });
+      return json(res, 200, meta);
+    }
+
+    if (req.method === 'GET' && u.pathname === '/api/build/list') {
+      return json(res, 200, { builds: B.listBuilds() });
+    }
+
+    if (req.method === 'GET' && u.pathname === '/api/build/file') {
+      const meta = B.readMeta(q('id'));
+      if (!meta) return json(res, 404, { error: '未找到该构建任务' });
+      const name = String(q('name') || '');
+      const hit = (meta.files || []).find((f) => f.file === name || f.name === name);
+      if (!hit || hit.error) return json(res, 404, { error: '没有这个文件' });
+      const file = path.join(B.dirOf(meta.id), hit.file);
+      if (!file.startsWith(B.dirOf(meta.id)) || !fs.existsSync(file)) return json(res, 404, { error: '文件已不在本地' });
+      const data = fs.readFileSync(file);
+      res.writeHead(200, {
+        'Content-Type': 'application/zip',
+        'Content-Length': data.length,
+        'Content-Disposition': `attachment; filename="${encodeURIComponent(hit.name)}"`,
+      });
+      return res.end(data);
     }
 
     // ---------------- 预设 ----------------
