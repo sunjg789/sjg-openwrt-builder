@@ -152,7 +152,8 @@ openwrt-custom-builder/
 
 ## 参考来源
 
-- 你的私有参考实现 `sunjg789/my-immortalwrt`（云端 ImageBuilder 工作流）——本项目的 ImageBuilder 引擎即按它的机制实现
+- 参考实现：**一个未公开的云端 ImageBuilder 工作流仓库**（本项目的 ImageBuilder 引擎即按它的机制实现）。
+  本仓库是公开的，所以这里不点名那个仓库 —— 公开仓库里的链接、仓库名对全网可见
 - 你的公开插件清单 `sunjg789/sjg-openwrt-packages`（`plugins.conf`，46 条第三方插件带真实上游地址）
 - 上游实时元数据：`downloads.openwrt.org`、`downloads.immortalwrt.org`
 

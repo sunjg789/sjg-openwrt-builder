@@ -140,6 +140,22 @@ const check = (c, m) => { if (!c) fail++; console.log(`${c ? '  ✓' : '  ✗'} 
   check(!(pv2.dropped || []).includes(bogus) && !!sh2 && sh2.content.includes(bogus),
     '配了第三方源时保留该包（可能由第三方源提供）');
 
+  console.log('\n=== H. 工作流必须声明最小权限（构建产物不回写仓库）===');
+  for (const [distro, ver] of [['openwrt', '25.12.5'], ['immortalwrt', '25.12.2']]) {
+    for (const engine of ['ib', 'src']) {
+      const pv = await post('/api/preview', {
+        engine, distro, version: ver, target: 'x86', subtarget: '64', profile: 'generic',
+        archPackages: 'x86_64', packages: [], excludes: [], customRepos: [],
+        image: { rootfsSizeMB: 1024, kernelSizeMB: 32 }, system: {}, network: {},
+      });
+      const f = (pv.files || []).find((x) => x.path && x.path.endsWith('.yml'));
+      const body = (f && f.content) || '';
+      check(/permissions:\s*\n\s*contents:\s*read/.test(body),
+        `${distro} ${ver} ${engine}: 声明了 contents: read（不是 write，也不是缺省继承）`);
+      check(!/contents:\s*write/.test(body), `${distro} ${ver} ${engine}: 未索要写权限`);
+    }
+  }
+
   console.log('\n=== 结果 ===');
   console.log(fail ? `\x1b[31m${fail} 项未通过\x1b[0m` : '\x1b[32m全部通过\x1b[0m');
   process.exit(fail ? 1 : 0);
