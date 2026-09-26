@@ -77,9 +77,9 @@ async function loadDistros() {
   for (const x of d.distros) {
     const el = document.createElement('button');
     el.className = 'distro' + (x.id === state.distro ? ' on' : '');
-    el.innerHTML = `<b>${x.name}</b><span>${x.label}</span>
-      <ul>${x.notes.map((n) => `<li>${n}</li>`).join('')}</ul>
-      <em>默认版本 ${x.defaultVersion}</em>`;
+    el.innerHTML = `<b>${escHtml(x.name)}</b><span>${escHtml(x.label)}</span>
+      <ul>${x.notes.map((n) => `<li>${escHtml(n)}</li>`).join('')}</ul>
+      <em>默认版本 ${escHtml(x.defaultVersion)}</em>`;
     el.onclick = () => { state.distro = x.id; loadDistros(); loadVersions(); };
     grid.appendChild(el);
   }
@@ -270,7 +270,7 @@ async function loadOfficialImages() {
       + `&target=${encodeURIComponent(state.target)}&sub=${encodeURIComponent(state.subtarget)}`
       + `&profile=${encodeURIComponent(state.profile)}`);
     if (!d.ok || !d.images.length) {
-      box.innerHTML = `<div class="mini">${d.note || '该设备上游没有提供固件文件'}</div>`;
+      box.innerHTML = `<div class="mini">${escHtml(d.note || '该设备上游没有提供固件文件')}</div>`;
       return;
     }
     box.innerHTML = d.images.map((i) => `
@@ -300,7 +300,7 @@ async function loadOfficialImages() {
       };
     });
   } catch (e) {
-    box.innerHTML = `<div class="mini bad">读取失败：${e.message}</div>`;
+    box.innerHTML = `<div class="mini bad">读取失败：${escHtml(e.message)}</div>`;
   }
 }
 
@@ -310,7 +310,7 @@ async function checkIB() {
     + `&target=${encodeURIComponent(state.target)}&sub=${encodeURIComponent(state.subtarget)}`);
   state.ib = d;
   if (d.ok) {
-    $('#ibState').innerHTML = `<span class="ok">✓ 可用</span><div class="mini">${d.filename}</div>`;
+    $('#ibState').innerHTML = `<span class="ok">✓ 可用</span><div class="mini">${escHtml(d.filename)}</div>`;
     $('#engineIbNote').textContent = '3~10 分钟出固件 · 磁盘 <2GB';
     $('#engineIbWrap').classList.remove('disabled');
   } else {
@@ -331,7 +331,7 @@ async function loadPackages() {
   try {
     const d = await api(`/api/packages?distro=${state.distro}&version=${encodeURIComponent(state.version)}&arch=${encodeURIComponent(state.archPackages)}`);
     state.plugins = d.plugins || [];
-    $('#pkgHint').innerHTML = `包管理器 <b>${d.manager}</b> · 该版本软件源共 <b>${d.indexCount}</b> 个包`
+    $('#pkgHint').innerHTML = `包管理器 <b>${escHtml(d.manager)}</b> · 该版本软件源共 <b>${escHtml(d.indexCount)}</b> 个包`
       + ` · 候选插件 <b>${state.plugins.length}</b> 项${d.cached ? '（来自缓存）' : ''}`;
     renderCatFilters();
     renderPlugins();
@@ -388,11 +388,11 @@ function renderPlugins() {
     row.innerHTML = `
       <input type="checkbox" ${state.selected.has(id) ? 'checked' : ''}>
       <div class="pkg-main">
-        <div class="pkg-title">${p.label}${badgeHtml(p)}</div>
-        <div class="pkg-desc">${p.desc || ''}</div>
-        <code>${(p.pkgs || []).join(' ')}</code>
-        ${p.warn ? `<div class="pkg-warn">⚠ ${p.warn}</div>` : ''}
-        ${p.state === 'partial' ? `<div class="pkg-warn">该版本缺少：${(p.missing || []).join(' ')}</div>` : ''}
+        <div class="pkg-title">${escHtml(p.label)}${badgeHtml(p)}</div>
+        <div class="pkg-desc">${escHtml(p.desc || '')}</div>
+        <code>${escHtml((p.pkgs || []).join(' '))}</code>
+        ${p.warn ? `<div class="pkg-warn">⚠ ${escHtml(p.warn)}</div>` : ''}
+        ${p.state === 'partial' ? `<div class="pkg-warn">该版本缺少：${escHtml((p.missing || []).join(' '))}</div>` : ''}
       </div>
       <div class="pkg-size">${size ? size + ' MB' : '—'}</div>`;
     row.querySelector('input').onchange = (e) => {
@@ -438,7 +438,8 @@ function renderRepos() {
   for (const r of state.repos) {
     const el = document.createElement('span');
     el.className = 'repo-chip';
-    el.innerHTML = `<b>${r.name}</b><code>${r.url}</code>`;
+    // 源名与 URL 是用户手输的，直接拼进 innerHTML 等于给自己开了个 XSS 口子
+    el.innerHTML = `<b>${escHtml(r.name)}</b><code>${escHtml(r.url)}</code>`;
     const x = document.createElement('b');
     x.textContent = '✕'; x.className = 'x'; x.onclick = () => {
       state.repos = state.repos.filter((q) => q !== r); renderRepos(); renderSummary();
@@ -903,7 +904,7 @@ function markLoading(sel, text) {
   try {
     await loadDistros();
   } catch (e) {
-    $('#distroGrid').innerHTML = `<div class="distro"><b>加载失败</b><span>${e.message}</span>
+    $('#distroGrid').innerHTML = `<div class="distro"><b>加载失败</b><span>${escHtml(e.message)}</span>
       <em>请检查网络后刷新页面</em></div>`;
     toast('发行版列表加载失败', true);
   }

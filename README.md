@@ -141,6 +141,11 @@ openwrt-custom-builder/
 - ccache 必须配 `CONFIG_DEVEL=y`；缓存目录在源码树根 `.ccache` 而非 `~/.ccache`
 - 第三方 feed 一律指名 install，杜绝 `feeds install -a`
 - 换 branch/tag 前必须 `make distclean`
+- **ImageBuilder 对未知包是硬失败**（`package not found`，不是警告）：生成时若某包不在该版本官方索引里、
+  且你没配第三方源，它会从 `PACKAGES=` 里剔除，并在 `PACKAGES.txt` 里留痕（`× 包名`）——不静默丢包。
+  配了第三方源则一律保留（那些包可能正由第三方源提供）
+- 源码全编译按实测 **≈50GB** 估算磁盘，与生成的脚本里「可用磁盘 <50GB 直接退出」的硬校验一致
+  （免费 runner 只有 ~14GB，所以源码档的 Actions 工作流跑 `self-hosted`）
 - root 密码用 md5crypt，且哈希**必须用单引号**赋值（`$1$` 进双引号会被 shell 当成位置参数，导致密码损坏）
 
 上述最后一条已交叉验证：生成的哈希与 `openssl passwd -1 -salt <salt>` 逐字符一致。

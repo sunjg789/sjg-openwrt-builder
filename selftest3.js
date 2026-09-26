@@ -14,6 +14,20 @@ const get = (p) => new Promise((res, rej) => {
   }).on('error', rej);
 });
 
+const post = (p, body) => new Promise((res, rej) => {
+  const data = JSON.stringify(body);
+  const req = http.request({
+    host: '127.0.0.1', port: PORT, path: p, method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) },
+  }, (r) => {
+    const c = [];
+    r.on('data', (d) => c.push(d));
+    r.on('end', () => { try { res(JSON.parse(Buffer.concat(c))); } catch { res({}); } });
+  });
+  req.on('error', rej);
+  req.end(data);
+});
+
 let fail = 0;
 const check = (c, m) => { if (!c) fail++; console.log(`${c ? '  ✓' : '  ✗'} ${m}`); return c; };
 
@@ -99,6 +113,32 @@ const check = (c, m) => { if (!c) fail++; console.log(`${c ? '  ✓' : '  ✗'} 
     for (const k of im.keys) console.log(`      ${k}: ${im.data[k].length} 条记录`);
     check(im.data['imm-24.10'].length > 100 && im.data['imm-25.12'].length > 100, '两个系列的清单条目数正常');
   }
+
+  console.log('\n=== G. 官方源里没有的包必须从 PACKAGES 剔除（IB 对未知包是硬失败）===');
+  const bogus = 'zzz-not-a-real-package';
+  const spec = {
+    engine: 'ib', distro: 'immortalwrt', version: '25.12.2', target: 'x86', subtarget: '64',
+    profile: 'generic', archPackages: 'x86_64',
+    packages: ['luci', bogus], excludes: [], customRepos: [],
+    image: { rootfsSizeMB: 1024, kernelSizeMB: 32 },
+    system: {}, network: {},
+  };
+  const pv = await post('/api/preview', spec);
+  const sh = (pv.files || []).find((f) => f.path === 'build.sh');
+  const yml = (pv.files || []).find((f) => f.path === '.github/workflows/ib-build.yml');
+  const txt = (pv.files || []).find((f) => f.path === 'PACKAGES.txt');
+  check((pv.dropped || []).includes(bogus), `服务端剔除清单含 ${bogus}：${JSON.stringify(pv.dropped)}`);
+  check(!!sh && !sh.content.includes(bogus), 'build.sh 的 PACKAGES 里没有这个未知包');
+  check(!!yml && !yml.content.includes(bogus), '工作流的 PACKAGES 里没有这个未知包');
+  check(!!txt && txt.content.includes(bogus), 'PACKAGES.txt 里留痕说明它被剔除了（不静默丢包）');
+
+  // 配了第三方源时不能摘：那些包可能正由第三方源提供
+  const spec2 = JSON.parse(JSON.stringify(spec));
+  spec2.customRepos = [{ name: 'x', url: 'https://example.com/repo' }];
+  const pv2 = await post('/api/preview', spec2);
+  const sh2 = (pv2.files || []).find((f) => f.path === 'build.sh');
+  check(!(pv2.dropped || []).includes(bogus) && !!sh2 && sh2.content.includes(bogus),
+    '配了第三方源时保留该包（可能由第三方源提供）');
 
   console.log('\n=== 结果 ===');
   console.log(fail ? `\x1b[31m${fail} 项未通过\x1b[0m` : '\x1b[32m全部通过\x1b[0m');

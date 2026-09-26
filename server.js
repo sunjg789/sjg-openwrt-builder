@@ -209,6 +209,26 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ---------------- 生成 ----------------
+
+    /**
+     * 把「该版本官方源里没有」的包从 PACKAGES 里摘掉。
+     * ImageBuilder 对未知包是硬失败（package not found），不是警告，
+     * 所以与其生成一条必然失败的命令，不如剔除 + 在产物里留痕。
+     * 配了第三方源时不摘（那些包可能正是由第三方源提供）。
+     */
+    async function applyDropped(spec) {
+      spec.dropped = [];
+      if (spec.engine === 'src') return spec; // 源码编译会自己拉 feed，不受官方索引限制
+      if (!spec.archPackages || !(spec.packages || []).length) return spec;
+      if ((spec.customRepos || []).length) return spec;
+      try {
+        const idx = await U.getPackageIndex(spec.distro, spec.version, spec.archPackages);
+        if (!idx || !idx.names) return spec;
+        spec.dropped = (spec.packages || []).filter((p) => !idx.names.has(p));
+      } catch { /* 索引取不到就按原样生成，交给 /api/validate 提示 */ }
+      return spec;
+    }
+
     if (req.method === 'POST' && u.pathname === '/api/validate') {
       const spec = JSON.parse((await readBody(req)) || '{}');
       const warnings = [];
@@ -273,8 +293,9 @@ const server = http.createServer(async (req, res) => {
         const files = await generateSRC(spec);
         return json(res, 200, { engine: 'src', files, estimate: estimateSRC(spec), ib });
       }
+      await applyDropped(spec);
       const files = generateIB(spec, ib);
-      return json(res, 200, { engine: 'ib', files, estimate: estimateIB(spec), ib });
+      return json(res, 200, { engine: 'ib', files, estimate: estimateIB(spec), ib, dropped: spec.dropped || [] });
     }
 
     if (req.method === 'POST' && u.pathname === '/api/zip') {
@@ -282,6 +303,7 @@ const server = http.createServer(async (req, res) => {
       const ib = spec.target && spec.subtarget
         ? await IB.resolveIbUrl(spec.distro, spec.version, spec.target, spec.subtarget)
         : { ok: false, url: null, ext: null };
+      await applyDropped(spec);
       const files = spec.engine === 'src' ? await generateSRC(spec) : generateIB(spec, ib);
       const zip = createZip(files.map((f) => ({ name: f.path, content: f.content })));
       res.writeHead(200, {
@@ -314,6 +336,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && u.pathname === '/api/build/start') {
       const spec = JSON.parse((await readBody(req)) || '{}');
+      await applyDropped(spec);
       const ib = spec.target && spec.subtarget
         ? await IB.resolveIbUrl(spec.distro, spec.version, spec.target, spec.subtarget)
         : { ok: false, url: null, ext: null };
