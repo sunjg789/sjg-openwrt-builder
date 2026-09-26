@@ -1,0 +1,7 @@
+# immortalwrt 25.12.2 x86/64 generic
+# 加 -- > 为正选；带 - 前缀为排除（ImageBuilder 的 -pkg 语法）
+
++ luci
++ ttyd
++ wireguard-tools
+
