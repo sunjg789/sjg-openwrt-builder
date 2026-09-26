@@ -198,8 +198,16 @@ async function api(method, p, body) {
   };
   const author = who(headLines.find(l => l.startsWith('author ')));
   const committer = who(headLines.find(l => l.startsWith('committer ')));
-  // parent 取本地提交对象的 parent：回滚掉上一次内容有误的提交，保证祖先链一致
-  const parentSha = headLines.find(l => l.startsWith('parent ')).slice(7).trim();
+  // parent 取本地提交对象的 parent：回滚掉上一次内容有误的提交，保证祖先链一致。
+  // 但若这个 parent 在远端根本不存在（上一次推送因为"保留了远端独有文件"生成的是另一个 sha，
+  // 本次的父提交自然从没上过远端），就必须退回用远端 main 的当前提交，否则 422。
+  let parentSha = headLines.find(l => l.startsWith('parent ')).slice(7).trim();
+  const parentExists = await api('GET', `/repos/${owner}/${repoName}/commits/${parentSha}`).then(() => true).catch(() => false);
+  if (!parentExists) {
+    const mainRef = await api('GET', `/repos/${owner}/${repoName}/git/ref/heads/main`);
+    parentSha = mainRef.object.sha;
+    console.log(`本地父提交不在远端（上次推送生成的是另一个 sha），改用远端 main 当前提交 ${parentSha.slice(0, 7)} 作为父`);
+  }
   console.log('parent =', parentSha, '\nauthor =', JSON.stringify(author), '\ncommitter =', JSON.stringify(committer));
 
   const cm = await api('POST', `/repos/${owner}/${repoName}/git/commits`, {
