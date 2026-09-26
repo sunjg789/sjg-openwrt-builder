@@ -1,0 +1,35 @@
+# immortalwrt 25.12.2 x86/64 generic
+# 加 -- > 为正选；带 - 前缀为排除（ImageBuilder 的 -pkg 语法）
+
++ luci-app-openclash
++ luci-app-passwall2
++ luci-app-homeproxy
++ homeproxy
++ luci-app-nikki
++ sing-box
++ luci-app-adguardhome
++ wireguard-tools
++ luci-app-wireguard
++ luci-proto-wireguard
++ kmod-wireguard
++ luci-app-lucky
++ lucky
++ luci-app-arpbind
++ luci-app-vlmcsd
++ vlmcsd
++ luci-app-ddns-go
++ ddns-go
++ luci-app-wol
++ etherwake
++ luci-app-diskman
++ block-mount
++ ttyd
++ luci-app-commands
++ luci-app-ramfree
++ luci-app-unblockneteasemusic
++ luci-app-autoreboot
++ luci-app-partexp
++ luci-theme-argon
++ luci-app-argon-config
++ luci-i18n-base-zh-cn
+
