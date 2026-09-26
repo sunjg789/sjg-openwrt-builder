@@ -17,6 +17,11 @@
  *
  * 之所以要对齐套件：Git 对象的 sha 由内容决定，只要 tree / parent / author / committer /
  * message 全部一致，远端生成出来的 commit sha 会和本地 HEAD **一模一样**。
+ *
+ * 注意：本脚本**会保留远端默认分支上本地没有的文件**（默认行为），典型是
+ * `.github/workflows/*.yml` —— 那是站点在在线构建时自动补推的（workflow_dispatch 只认
+ * 默认分支上的工作流）。按本地 HEAD 原样重建树会把它删掉，下一次在线构建立刻 422。
+ * 真要完全对齐本地 HEAD，加 `--prune`。
  */
 const fs = require('fs');
 const path = require('path');
@@ -81,6 +86,25 @@ async function api(method, p, body) {
   const files = [...want.keys()].map((p) => ({ path: p, full: p, mode: '100644' }));
   console.log('本地根树 =', rootTree, '，文件数 =', files.length);
 
+  // 远端默认分支上"本地没有"的文件要保留下来。
+  // 典型就是 .github/workflows/*.yml：站点在构建时会自动补推它（workflow_dispatch 只认
+  // 默认分支上的工作流）。若这里按本地 HEAD 原样重建树，就会把人家补的文件删掉，
+  // 下一次在线构建立刻 422 "Workflow does not have 'workflow_dispatch' trigger"。
+  const remote = await api('GET', `/repos/${owner}/${repoName}/git/trees/main?recursive=1`).catch(() => null);
+  const remoteOnly = [];
+  if (remote && remote.tree) {
+    for (const e of remote.tree) {
+      if (e.type !== 'blob') continue;
+      if (want.has(e.path)) continue;
+      if (process.argv.includes('--prune')) continue; // 显式要求完全对齐本地 HEAD 时才删
+      remoteOnly.push({ path: e.path, mode: e.mode, sha: e.sha });
+    }
+  }
+  if (remoteOnly.length) {
+    console.log(`保留远端独有文件 ${remoteOnly.length} 个（本地 HEAD 里没有，多半是站点补推的工作流）：`);
+    for (const r of remoteOnly) console.log('   ', r.path);
+  }
+
   // 1) 上传所有 blob（以 ls-tree 里的 sha 为准，处理 eol 转换导致工作区与 blob 不一致的情况）
   const gitSha = (buf) => crypto.createHash('sha1').update(Buffer.concat([Buffer.from('blob ' + buf.length + '\0'), buf])).digest('hex');
   const shaOf = new Map();
@@ -126,6 +150,14 @@ async function api(method, p, body) {
     const parent = parts.length ? mkdirp(parts) : rootChildren;
     parent.set(name, { file: f });
   }
+  // 远端独有的文件直接挂回树里（sha 已存在于远端，不需要重新上传 blob）
+  for (const r of remoteOnly) {
+    shaOf.set(r.path, r.sha);
+    const parts = r.path.split('/');
+    const name = parts.pop();
+    const parent = parts.length ? mkdirp(parts) : rootChildren;
+    parent.set(name, { file: { path: r.path, mode: r.mode || '100644' } });
+  }
   async function build(node) {
     const tree = [];
     for (const [name, child] of node) {
@@ -141,7 +173,10 @@ async function api(method, p, body) {
     return (await api('POST', `/repos/${owner}/${repoName}/git/trees`, { tree })).sha;
   }
   const apiTree = await build(rootChildren);
-  console.log('远端根树 =', apiTree, apiTree === rootTree ? '（与本地一致 ✓）' : '（不一致 ✗）');
+  const sameAsLocal = apiTree === rootTree;
+  console.log('远端根树 =', apiTree, sameAsLocal
+    ? '（与本地一致 ✓）'
+    : (remoteOnly.length ? '（≠本地：含保留的远端独有文件，属预期）' : '（不一致 ✗ 请核对排序/换行）'));
 
   // 3) 复刻原 commit 对象（tree/parent/author/committer/message 全部对齐 → sha 应相同）
   const splitAt = rawCommit.indexOf('\n\n');
@@ -173,7 +208,9 @@ async function api(method, p, body) {
   const localHead = rd('tmp-head-sha.txt').trim();
   console.log('远端 commit =', cm.sha, cm.sha === localHead
     ? `(与本地 HEAD ${localHead.slice(0, 7)} 完全一致 ✓)`
-    : `(!= 本地 HEAD ${localHead.slice(0, 7)}：对象里有字段没对齐，内容虽等价，建议核对 tree/日期)`);
+    : (remoteOnly.length
+      ? `(!= 本地 HEAD ${localHead.slice(0, 7)}：因为保留了 ${remoteOnly.length} 个远端独有文件，属预期）`
+      : `(!= 本地 HEAD ${localHead.slice(0, 7)}：对象里有字段没对齐，内容虽等价，建议核对 tree/日期）`));
 
   await api('PATCH', `/repos/${owner}/${repoName}/git/refs/heads/main`, { sha: cm.sha, force: true });
   console.log('refs/heads/main 已更新到', cm.sha);

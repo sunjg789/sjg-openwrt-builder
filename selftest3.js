@@ -156,6 +156,21 @@ const check = (c, m) => { if (!c) fail++; console.log(`${c ? '  ✓' : '  ✗'} 
     }
   }
 
+  console.log('\n=== I. 工作流注册判定必须看默认分支的真实文件（不能被「幽灵注册」骗）===');
+  try {
+    const { Gh } = require('./lib/gh');
+    const cfg = JSON.parse(fs.readFileSync('config/gh.json', 'utf8'));
+    const gh = new Gh(cfg.token, cfg.repo);
+    const onDefault = await gh.isRegisteredOnDefault('ib-build.yml');
+    const list = await gh.registeredWorkflows();
+    // 曾踩过的坑：/actions/workflows 列表会残留已删除文件的记录（state=active），
+    // 信它就会带着 registeredOnDefault=true 去 dispatch，被 GitHub 用 422 打回。
+    check(!!onDefault, '默认分支上真有 .github/workflows/ib-build.yml（dispatch 才可用）');
+    check(list.some((w) => w.path.endsWith('ib-build.yml')), '工作流列表也查得到（两侧一致，说明不是幽灵注册）');
+  } catch (e) {
+    console.log('   跳过（需要 GitHub token 与网络）：' + e.message);
+  }
+
   console.log('\n=== 结果 ===');
   console.log(fail ? `\x1b[31m${fail} 项未通过\x1b[0m` : '\x1b[32m全部通过\x1b[0m');
   process.exit(fail ? 1 : 0);
