@@ -256,6 +256,14 @@ const check = (c, m) => { if (!c) fail++; console.log(`${c ? '  ✓' : '  ✗'} 
         : (doc.true && typeof doc.true === 'object') ? doc.true : {};
       check(wantTriggers.every((t) => t in trigger),
         `${engine}: 触发器齐全（${wantTriggers.join(' + ')}）`);
+      if ('push' in trigger) {
+        // 同步工作流到默认分支会在 main 上产生一次提交，而该提交本身也动了
+        // .github/workflows/** —— 若 push 触发器不限分支，它会被自己的 paths 命中，
+        // 凭空多跑一整轮构建并多发一个 Release（实测：两个 Release 只差 6 秒）。
+        const br = (trigger.push && trigger.push.branches) || [];
+        check(br.length > 0 && br.every((b) => String(b).startsWith('build/')),
+          `${engine}: push 触发器限定在构建分支（实际 ${JSON.stringify(br)}）`);
+      }
       check(doc.jobs[buildName].needs === undefined,
         `${engine}: 构建 job 无 needs（它是入口，不能依赖别人）`);
       check(doc.jobs.release.needs === buildName,
