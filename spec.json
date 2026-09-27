@@ -1,0 +1,49 @@
+{
+  "engine": "ib",
+  "distro": "openwrt",
+  "version": "25.12.5",
+  "refPolicy": "tag",
+  "target": "x86",
+  "subtarget": "64",
+  "profile": "generic",
+  "archPackages": "x86_64",
+  "packages": [
+    "ttyd",
+    "luci-theme-openwrt"
+  ],
+  "packagesSizeMB": 8,
+  "excludes": [],
+  "customRepos": [],
+  "ipv6": true,
+  "wanInput": "reject",
+  "userScript": "",
+  "image": {
+    "rootfsSizeMB": 256,
+    "kernelSizeMB": 32
+  },
+  "system": {
+    "hostname": "SJG",
+    "loginName": "sunjg789",
+    "password": "sunjian393626",
+    "loginPassword": "sunjian393626",
+    "timezone": "CST-8",
+    "zonename": "Asia/Shanghai"
+  },
+  "network": {
+    "mode": "router",
+    "lanIp": "192.168.3.112",
+    "lanNetmask": "255.255.255.0",
+    "wanProto": "dhcp",
+    "pppoeUser": "tx7593762",
+    "pppoePass": "08057032",
+    "wanIp": "",
+    "wanGateway": "",
+    "wanDns": "",
+    "bypassIp": "192.168.1.2",
+    "bypassGateway": "",
+    "bypassDns": "",
+    "wanPorts": [],
+    "lanPorts": []
+  },
+  "dropped": []
+}
