@@ -1,0 +1,21 @@
+{
+  "engine": "ib",
+  "distro": "immortalwrt",
+  "version": "25.12.2",
+  "target": "x86",
+  "subtarget": "64",
+  "profile": "generic",
+  "archPackages": "x86_64",
+  "packages": [
+    "luci"
+  ],
+  "excludes": [],
+  "customRepos": [],
+  "image": {
+    "rootfsSizeMB": 512,
+    "kernelSizeMB": 32
+  },
+  "system": {},
+  "network": {},
+  "dropped": []
+}
