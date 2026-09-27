@@ -140,7 +140,18 @@ const check = (c, m) => { if (!c) fail++; console.log(`${c ? '  ✓' : '  ✗'} 
   check(!(pv2.dropped || []).includes(bogus) && !!sh2 && sh2.content.includes(bogus),
     '配了第三方源时保留该包（可能由第三方源提供）');
 
-  console.log('\n=== H. 工作流必须声明最小权限（构建产物不回写仓库）===');
+  console.log('\n=== H. 工作流权限必须分层最小（构建只读，只有发 Release 拿写）===');
+  // 取某个 job 的整段（job 名固定缩进 2 空格，段到下一个 job 名为止）
+  const jobBlock = (yml, name) => {
+    const lines = yml.split('\n');
+    const start = lines.findIndex((l) => new RegExp('^  ' + name + ':\\s*$').test(l));
+    if (start < 0) return '';
+    let end = lines.length;
+    for (let i = start + 1; i < lines.length; i++) {
+      if (/^  [A-Za-z0-9_-]+:\s*$/.test(lines[i])) { end = i; break; }
+    }
+    return lines.slice(start, end).join('\n');
+  };
   for (const [distro, ver] of [['openwrt', '25.12.5'], ['immortalwrt', '25.12.2']]) {
     for (const engine of ['ib', 'src']) {
       const pv = await post('/api/preview', {
@@ -150,9 +161,28 @@ const check = (c, m) => { if (!c) fail++; console.log(`${c ? '  ✓' : '  ✗'} 
       });
       const f = (pv.files || []).find((x) => x.path && x.path.endsWith('.yml'));
       const body = (f && f.content) || '';
-      check(/permissions:\s*\n\s*contents:\s*read/.test(body),
-        `${distro} ${ver} ${engine}: 声明了 contents: read（不是 write，也不是缺省继承）`);
-      check(!/contents:\s*write/.test(body), `${distro} ${ver} ${engine}: 未索要写权限`);
+      const tag = `${distro} ${ver} ${engine}`;
+      const buildName = engine === 'ib' ? 'ib' : 'src';
+      const buildBlock = jobBlock(body, buildName);
+      const releaseBlock = jobBlock(body, 'release');
+      const writeCount = (body.match(/contents:\s*write/g) || []).length;
+
+      check(/^permissions:\s*\n\s*contents:\s*read/m.test(body),
+        `${tag}: 顶层默认只读（未显式声明会继承仓库默认，很多仓库默认给写）`);
+      check(!!buildBlock && /contents:\s*read/.test(buildBlock), `${tag}: 构建 job 显式只读`);
+      // 这是本次分层权限的核心断言：构建阶段要执行 feeds 里拉来的第三方 Makefile，
+      // 只要它没有写权限，就算第三方代码被投毒也推不动这个仓库。
+      check(!!buildBlock && !/contents:\s*write/.test(buildBlock),
+        `${tag}: 构建 job 不得持有写权限（它会执行不可信的第三方构建脚本）`);
+      check(!!releaseBlock, `${tag}: 存在独立的 release job`);
+      check(writeCount === 1, `${tag}: 写权限全文件只出现 1 次（实际 ${writeCount} 次）`);
+      check(/contents:\s*write/.test(releaseBlock), `${tag}: 写权限给在 release job 上`);
+      check(new RegExp('needs:\\s*' + buildName).test(releaseBlock),
+        `${tag}: release job 依赖构建 job（构建失败就不发布）`);
+      // 发布 job 只许下载产物 + 建 Release；一旦它 checkout 源码，就等于让工作区里的
+      // 内容以写权限身份进入执行路径，分层就白做了。
+      check(!/uses:\s*actions\/checkout/.test(releaseBlock),
+        `${tag}: release job 不 checkout 源码（不把任何仓库内容带进写权限上下文）`);
     }
   }
 
@@ -195,6 +225,42 @@ const check = (c, m) => { if (!c) fail++; console.log(`${c ? '  ✓' : '  ✗'} 
     const line = body.split('\n').find((l) => l.includes('-printf') && l.includes('find ')) || '';
     check(!!line && line.includes('2>/dev/null'), `${engine}: find 的 -printf 行屏蔽了 BSD find 的报错`);
     check(!!line && /\|\s*head[^|]*\|\|\s*true\s*$/.test(line), `${engine}: head 截断后的管道有 || true 兜底`);
+  }
+
+  console.log('\n=== L. 生成的 workflow 必须是合法 YAML（语法错 → GitHub 根本不加载它）===');
+  // YAML 坏掉时的症状极具迷惑性：文件在分支上看得见，但 /actions/workflows 里没有它，
+  // dispatch 报 404/422 —— 和「幽灵注册」长得一模一样。所以这里直接解析一遍。
+  let yamlLib = null;
+  try { yamlLib = require('js-yaml'); } catch (e) { /* 可选依赖 */ }
+  if (!yamlLib) {
+    console.log('   跳过（未安装 js-yaml）');
+  } else {
+    const ychecks = [
+      // IB 有 push 触发器（dispatch 走不通时的兜底）；源码档只留 dispatch，它太贵不适合被 push 触发
+      ['ib', ['ib', 'release'], 'ib', ['workflow_dispatch', 'push']],
+      ['src', ['src', 'release'], 'src', ['workflow_dispatch']],
+    ];
+    for (const [engine, wantJobs, buildName, wantTriggers] of ychecks) {
+      const pvL = await post('/api/preview', mk(engine));
+      const yf = (pvL.files || []).find((f) => f.path && f.path.endsWith('.yml'));
+      let doc = null, err = null;
+      try { doc = yamlLib.load(yf.content); } catch (e) { err = e; }
+      check(!err, `${engine}: YAML 可解析${err ? ' —— ' + err.message.split('\n')[0] : ''}`);
+      if (!doc) continue;
+      const jobs = Object.keys(doc.jobs || {});
+      check(wantJobs.every((j) => jobs.includes(j)) && jobs.length === wantJobs.length,
+        `${engine}: 恰好两个 job（${jobs.join(', ')}）`);
+      // 注意两点：YAML 1.1 解析器会把裸 on 读成布尔 true（两种都兜住）；
+      // 且 `workflow_dispatch:` 后面没值，解析结果是 null —— 必须判「键在不在」而不是真值。
+      const trigger = (doc.on && typeof doc.on === 'object') ? doc.on
+        : (doc.true && typeof doc.true === 'object') ? doc.true : {};
+      check(wantTriggers.every((t) => t in trigger),
+        `${engine}: 触发器齐全（${wantTriggers.join(' + ')}）`);
+      check(doc.jobs[buildName].needs === undefined,
+        `${engine}: 构建 job 无 needs（它是入口，不能依赖别人）`);
+      check(doc.jobs.release.needs === buildName,
+        `${engine}: release job needs: ${buildName}`);
+    }
   }
 
   console.log('\n=== 结果 ===');

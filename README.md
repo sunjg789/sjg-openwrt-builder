@@ -169,7 +169,7 @@ openwrt-custom-builder/
   ② Git Data API 推到孤儿分支 build/<distro>-<ver>-<target>-<sub>-<stamp>
   ③ 触发运行（dispatch 优先，push 兜底）
   ④ 每 5 秒轮询 job / step 进度，前端按步骤着色
-  ⑤ 运行结束 → 自动把 Artifacts 拉回 out/builds/<id>/，页面上直接「下载到本地」
+  ⑤ 运行结束 → 云端自动发 Release（永久存档，免登录可下）；站点再把 Artifacts 拉回 out/builds/<id>/，页面上直接「下载到本地」
   ⑥ 若失败 → 拉回云端日志，面板里摊开报错摘要 + 可折叠的日志尾部
 ```
 
@@ -193,6 +193,23 @@ openwrt-custom-builder/
 - 云端默认**关闭虚拟磁盘格式**（`CONFIG_QCOW2/VDI/VMDK/VHDX_IMAGES=n`）：单实例 x86/64 产物从 **386MB 降到 168MB**，省掉的一半几乎全是 qcow2/vdi/vmdk/vhdx。
 - 回传是**可中断可续传**的：关掉页面、甚至重启服务，下次轮询都会从已落盘的位置继续。
 - 面板显示回传百分比；回传中不会给出"下载"按钮，避免下到半截的 zip。
+
+### 构建成功后自动发 Release
+
+Artifact 只适合"把产物取回本地"——它 90 天过期、必须登录才能下载，而且**占用账户级 500MB 存储额度**（与 Packages 共享），用尽后不是变慢而是直接阻止上传。所以工作流在产物之外还会**自动发一个 Release**：附件不占那份额度，永久保存，公开仓库免登录即可下载。
+
+tag 形如 `<distro>-<version>-<target>-<subtarget>-<profile>-<UTC 时间戳>`，每跑一次构建就是一个独立条目，不会互相覆盖，也不用手工清 tag。附件是**解压后的各个固件文件**（不是一整个 zip），外加 `SHA256SUMS.txt`，可以只下自己要的那一个。
+
+Release 默认带 `--latest=false`：这是按需构建的定制固件，不该去抢仓库的 Latest 徽章。
+
+**权限是按 job 分层的**，这是有意的设计：
+
+| job | 权限 | 原因 |
+|---|---|---|
+| 构建（`ib` / `src`） | `contents: read` | 它要执行 `feeds` 里拉进来的成百上千个第三方 Makefile，是整个流程里最不可信的一环。只要它没有写权限，第三方代码就算被投毒也推不动这个仓库 |
+| 发布（`release`） | `contents: write` | 只做三件事：取回 Artifact、算校验和、建 Release 上传。**不 checkout、不执行任何来自构建产物的代码**，攻击面小得多 |
+
+对应断言在 `selftest3.js` 的 H 组：构建 job 不得持有写权限、写权限全文件只出现一次、且必须落在 release job 上、release job 不得 checkout。
 
 依赖也是我们踩出来的补齐项（`lib/genib.js` 的 apt 那一步）：
 
