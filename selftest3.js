@@ -171,6 +171,32 @@ const check = (c, m) => { if (!c) fail++; console.log(`${c ? '  ✓' : '  ✗'} 
     console.log('   跳过（需要 GitHub token 与网络）：' + e.message);
   }
 
+  console.log('\n=== J. 包索引「重复定义」自检必须真的能检出重复 ===');
+  // 曾经写成 grep -c '^Duplicate' <(sort ... | uniq -d)：uniq -d 吐的是重复行原文
+  //（"Package: xxx"），行首没有 "Duplicate"，于是计数恒为 0，这项自检完全失效。
+  const mk = (engine) => ({
+    engine, distro: 'openwrt', version: '25.12.5', target: 'x86', subtarget: '64',
+    profile: 'generic', archPackages: 'x86_64', packages: [], excludes: [], customRepos: [],
+    image: { rootfsSizeMB: 1024, kernelSizeMB: 32 }, system: {}, network: {},
+  });
+  const srcScript = (((await post('/api/preview', mk('src'))).files || [])
+    .find((f) => f.path === 'build.sh') || {}).content || '';
+  // 只看有效代码行：注释里会特意保留反例原文用于教学，不能算作违规
+  const codeLines = srcScript.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+  check(!codeLines.includes("grep -c '^Duplicate'"), '不再使用恒为 0 的 grep -c \'^Duplicate\'');
+  check(/\|\s*sort\s*\|\s*uniq -d\s*\|\s*wc -l/.test(codeLines), '改用 sort | uniq -d | wc -l 数重复组');
+
+  console.log('\n=== K. 收尾收集产物不得因 BSD find / SIGPIPE 掩盖成功的构建 ===');
+  // BSD find（macOS）没有 -printf，直接报错；GNU find 输出被 head 截断会吃 SIGPIPE(141)。
+  // 脚本开着 pipefail，两种都会让已经成功的构建以非 0 收场，所以必须 2>/dev/null ... || true。
+  for (const engine of ['ib', 'src']) {
+    const pvK = await post('/api/preview', mk(engine));
+    const body = ((pvK.files || []).find((f) => f.path === 'build.sh') || {}).content || '';
+    const line = body.split('\n').find((l) => l.includes('-printf') && l.includes('find ')) || '';
+    check(!!line && line.includes('2>/dev/null'), `${engine}: find 的 -printf 行屏蔽了 BSD find 的报错`);
+    check(!!line && /\|\s*head[^|]*\|\|\s*true\s*$/.test(line), `${engine}: head 截断后的管道有 || true 兜底`);
+  }
+
   console.log('\n=== 结果 ===');
   console.log(fail ? `\x1b[31m${fail} 项未通过\x1b[0m` : '\x1b[32m全部通过\x1b[0m');
   process.exit(fail ? 1 : 0);
