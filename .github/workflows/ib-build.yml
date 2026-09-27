@@ -87,9 +87,9 @@ jobs:
           cd ${{ steps.ib.outputs.ibdir }}
           make image \
             PROFILE='generic' \
-            PACKAGES='luci-i18n-base-zh-cn' \
+            PACKAGES='luci' \
             FILES='${{ github.workspace }}/files' \
-            ROOTFS_PARTSIZE='1024' \
+            ROOTFS_PARTSIZE='512' \
             V=s
 
       - name: 收集产物
@@ -108,6 +108,11 @@ jobs:
           name: firmware-${{ github.run_id }}
           path: out/*
           if-no-files-found: error
+          # app 现在优先从 Release 取产物（见 lib/reltag.js 的 tag 约定），
+          # Artifact 只留作兜底：万一发布那一步挂了，还有一天窗口能救。
+          # 保留期必须压短 —— Artifact 吃的是**账户级 500MB** 额度（与 Packages 共享，
+          # 用尽即阻止上传），而 Release 附件完全不占这份额度。
+          retention-days: 1
 
   release:
     needs: ib
@@ -138,9 +143,11 @@ jobs:
           mv /tmp/SHA256SUMS.txt ./SHA256SUMS.txt
           cat SHA256SUMS.txt
 
-          # tag 带 UTC 时间戳保证唯一：每跑一次构建就是一个独立的发布条目，
-          # 不会被后一次构建覆盖，也不需要手工删 tag。
-          TAG="immortalwrt-25.12.2-x86-64-generic-$(date -u +%Y%m%d-%H%M%S)"
+          # tag 规则来自 lib/reltag.js —— app 拉产物时用的是同一套，两边绝不能各拼各的，
+          # 否则会变成「构建全绿、Release 也在、app 却说没产物」，还不报错。
+          # 用 run_id 而不是时间戳：app 在 dispatch 之后就拿到了 run_id，
+          # 却无法预知这里运行时才生成的日期。
+          TAG="immortalwrt-25.12.2-x86-64-generic-r${{ github.run_id }}"
           echo "TAG=${TAG}"
           # --latest=false：这是按需构建的定制固件，不该去抢仓库的 Latest 徽章
           gh release create "${TAG}" \
@@ -161,8 +168,8 @@ jobs:
           | 发行版 | ImmortalWrt 25.12.2 |
           | 目标平台 | x86/64 |
           | 设备 profile | generic |
-          | rootfs 分区 | 1024 MB |
-          | 内置包 | luci-i18n-base-zh-cn |
+          | rootfs 分区 | 512 MB |
+          | 内置包 | luci |
           | 排除包 | （无） |
           | 第三方软件源 | （无） |
 
