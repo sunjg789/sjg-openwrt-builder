@@ -1,0 +1,177 @@
+name: IB-immortalwrt-25.12.2-x86-64
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['files/**', '.github/workflows/**']
+
+# 分层最小权限。构建阶段会执行大量第三方 Makefile（feeds 里拉进来的包），
+# 那部分代码不可信 —— 绝不能让它手里攥着一枚能推代码的 GITHUB_TOKEN。
+# 所以 ib job 显式只读；只有末尾「发 Release」的 release job 临时拿写权限，
+# 而那一步只跑我们自己的几行 gh 命令，攻击面小得多（官方安全建议默认只读）。
+permissions:
+  contents: read
+
+jobs:
+  ib:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read   # 构建/打包阶段：只读，产物仅经 Artifact 传出
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 ImageBuilder 依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zstd xz-utils build-essential libncurses-dev zlib1g-dev \
+            gawk git gettext libssl-dev python3 python3-distutils rsync unzip file wget time \
+            qemu-utils genisoimage
+          # qemu-utils 提供 qemu-img：x86 等目标在 make image 时会顺带产出 qcow2/vdi/vmdk/vhdx，
+          # 缺了它 make 会在最后一步以 Error 1 告终（整轮失败，产物连带拿不到）。
+          command -v qemu-img >/dev/null 2>&1 && qemu-img --version | head -1
+          # OpenWrt 的 Makefile 里 ISO 那一步写死了 mkisofs，而 Ubuntu 只提供 genisoimage
+          #（jammy 里根本没有 mkisofs 这个包），不补链接会在 *.iso 上以 Error 127 收尾。
+          command -v mkisofs >/dev/null 2>&1 || sudo ln -sf "$(command -v genisoimage)" /usr/local/bin/mkisofs
+          mkisofs --version | head -1
+          # GNU install 预检：Ubuntu 26.04+ 默认换成 uutils coreutils，install 不带 GNU 字样，
+          # OpenWrt 的 prereq 会直接 "Please install GNU 'install'" 退出（它兜底的 ginstall 在 Ubuntu 叫 gnuinstall）。
+          # 现在钉的是 22.04 用不上，但 runner 镜像一升级就会踩，所以提前兜住。
+          if install --version 2>&1 | grep -qi uutils; then
+            sudo apt-get install -y gnu-coreutils
+            sudo ln -sf /usr/bin/gnuinstall /usr/local/bin/install
+            echo "/usr/local/bin 已置顶: $(command -v install)"
+          fi
+          install --version | head -1
+          # GitHub 22.04 runner 自带 make 4.3+，但仍要确认
+          make --version | head -1
+
+      - name: 下载并解包 ImageBuilder
+        id: ib
+        run: |
+          set -e
+          wget -q --tries=3 -O ib.tar 'https://downloads.immortalwrt.org/releases/25.12.2/targets/x86/64/immortalwrt-imagebuilder-25.12.2-x86-64.Linux-x86_64.tar.zst'
+          mkdir -p _ib && tar --zstd -xf ib.tar -C _ib
+          IBDIR="$(find _ib -maxdepth 1 -type d -name '*-imagebuilder-*' | head -n1)"
+          [ -n "$IBDIR" ] || IBDIR="_ib"
+          echo "ibdir=$IBDIR" >> $GITHUB_OUTPUT
+
+      - name: 附加第三方软件源
+        run: echo "未配置第三方源，跳过"
+
+      - name: 跳过虚拟磁盘格式（qcow2 / vdi / vmdk / vhdx）
+        # x86 的 ImageBuilder 默认会额外产出这几种虚拟盘镜像，每份都是一块完整磁盘：
+        # 产物从几十 MB 直接飙到近 400MB（实测 386MB），下载要按小时计；
+        # 而且它们恰好是两次构建失败的源头（缺 qemu-img / 缺 mkisofs）。
+        # 刷机要的是 combined(-efi) 之类的整机镜像，这里先把这些格式关掉。
+        run: |
+          set -e
+          cd ${{ steps.ib.outputs.ibdir }}
+          touch .config
+          for k in QCOW2 VDI VMDK VHDX; do
+            if grep -qE "^#? *CONFIG_${k}_IMAGES" .config; then
+              sed -i "s/^#\? *CONFIG_${k}_IMAGES=.*/CONFIG_${k}_IMAGES=n/" .config
+            else
+              echo "CONFIG_${k}_IMAGES=n" >> .config
+            fi
+          done
+          grep -E "CONFIG_(QCOW2|VDI|VMDK|VHDX)_IMAGES" .config || true
+
+      - name: 打包固件
+        run: |
+          set -e
+          cd ${{ steps.ib.outputs.ibdir }}
+          make image \
+            PROFILE='generic' \
+            PACKAGES='luci-i18n-base-zh-cn ttyd' \
+            FILES='${{ github.workspace }}/files' \
+            ROOTFS_PARTSIZE='1024' \
+            V=s
+
+      - name: 收集产物
+        run: |
+          mkdir -p out
+          # 只收整机镜像，排除虚拟盘格式与未压缩的裸 .img（后者同样是按 GB 计）
+          find ${{ steps.ib.outputs.ibdir }}/bin/targets -type f \
+            \( -name '*.img.gz' -o -name '*.bin' -o -name '*.iso' -o -name '*.tar.gz' \) \
+            ! -name '*.qcow2' ! -name '*.vdi' ! -name '*.vmdk' ! -name '*.vhdx' \
+            -exec cp -v {} out/ \; || true
+          du -sh out/
+          ls -lh out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ github.run_id }}
+          path: out/*
+          if-no-files-found: error
+
+  release:
+    needs: ib
+    runs-on: ubuntu-22.04
+    # 唯一拿写权限的 job。它不 checkout、不执行任何来自构建产物的代码，
+    # 只做三件事：取回 Artifact、算校验和、建 Release 并上传固件。
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware-${{ github.run_id }}
+          path: firmware
+
+      - name: 发布 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          cd firmware
+          if [ -z "$(ls -A . 2>/dev/null)" ]; then
+            echo "::warning::Artifact 为空，跳过发布"
+            exit 0
+          fi
+          # 校验和要在上传前算好。清单文件必须先落在目录外，
+          # 否则 sha256sum ./* 会把清单自己也算进去，出现自引用。
+          sha256sum ./* > /tmp/SHA256SUMS.txt
+          mv /tmp/SHA256SUMS.txt ./SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+          # tag 带 UTC 时间戳保证唯一：每跑一次构建就是一个独立的发布条目，
+          # 不会被后一次构建覆盖，也不需要手工删 tag。
+          TAG="immortalwrt-25.12.2-x86-64-generic-$(date -u +%Y%m%d-%H%M%S)"
+          echo "TAG=${TAG}"
+          # --latest=false：这是按需构建的定制固件，不该去抢仓库的 Latest 徽章
+          gh release create "${TAG}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title 'ImmortalWrt 25.12.2 · x86/64 · generic' \
+            --latest=false \
+            --notes-file - \
+            ./* <<'RELEASE_NOTES'
+          ImmortalWrt 25.12.2 · x86/64 · generic
+
+          由 sjg-openwrt-builder 自动构建（ImageBuilder 引擎：不编译源码，只重打包）。
+
+          ### 构建参数
+
+          | 项 | 值 |
+          | --- | --- |
+          | 发行版 | ImmortalWrt 25.12.2 |
+          | 目标平台 | x86/64 |
+          | 设备 profile | generic |
+          | rootfs 分区 | 1024 MB |
+          | 内置包 | luci-i18n-base-zh-cn ttyd |
+          | 排除包 | （无） |
+          | 第三方软件源 | （无） |
+
+          ### 构建来源
+
+          - 工作流运行号：${{ github.run_id }}
+          - 提交：${{ github.sha }}
+          - 触发方式：${{ github.event_name }}
+
+          ### 完整性校验
+
+          上传前已生成 SHA256SUMS.txt。下载后在本目录执行：
+
+              sha256sum -c SHA256SUMS.txt
+
+          > 这是按需构建的定制固件，不是项目版本发布。刷机前请自行确认文件与你的设备型号匹配。
+          RELEASE_NOTES
