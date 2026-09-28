@@ -219,20 +219,54 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   check(/mkisofs/.test(failBox.textContent) && /Error 2/.test(failBox.textContent), '摘要包含真正的报错行');
   check(!!doc.querySelector('#ghStatus details'), '提供「展开日志尾部」折叠区');
 
-  // 成功态：产物应变成可下载链接
+  // 成功态（Release 来源）：产物应变成可下载链接，并给出 Release 页入口
   ghRender({
     id: 't-1', repo: 'a/b', state: 'completed', conclusion: 'success', summary: { target: 'x86', subtarget: '64' },
-    jobs: [], artifacts: [], files: [{ name: 'images.zip', file: 'images_zip.zip', size: 3 * 1048576 }],
+    source: 'release', releaseTag: 'openwrt-25.12.5-x86-64-generic-r99887766',
+    releaseUrl: 'https://github.com/a/b/releases/tag/openwrt-25.12.5-x86-64-generic-r99887766',
+    jobs: [], artifacts: [], files: [
+      { name: 'openwrt-x86-64-generic-squashfs-combined-efi.img.gz', file: 'openwrt-x86-64-generic-squashfs-combined-efi.img.gz', size: 21 * 1048576, kind: 'release' },
+      { name: 'SHA256SUMS.txt', file: 'SHA256SUMS.txt', size: 1344, kind: 'release' },
+    ],
   });
   const link = doc.querySelector('#ghStatus a[href*="/api/build/file"]');
   check(!!link, `产物渲染为本地下载链接：${link ? link.getAttribute('href') : '无'}`);
+  const okTxt = doc.querySelector('#ghStatus').textContent;
+  check(/Release 已发布/.test(okTxt), '成功态标出「Release 已发布」');
+  check(/产物来自 GitHub Release/.test(okTxt) && /不占 Artifacts 500MB 配额/.test(okTxt),
+    '说明产物来源是 Release 及其好处');
+  check(/openwrt-25\.12\.5-x86-64-generic-r99887766/.test(okTxt), '展示 Release tag（排查时能直接对上）');
+  const relLink = doc.querySelector('#ghStatus a[href*="/releases/tag/"]');
+  check(!!relLink && relLink.textContent.includes('Release'), '提供「打开 Release 页」入口');
+  check(doc.querySelectorAll('#ghStatus a[href*="/api/build/file"]').length === 2,
+    '多个附件各自有下载链接（不止第一个）');
   check(!doc.querySelector('#ghStatus .gh-fail'), '成功态不再显示失败摘要');
-  check(!/没有产出 Artifact/.test(doc.querySelector('#ghStatus').textContent), '成功态不误报「没有产物」');
+  check(!/没有产出/.test(okTxt), '成功态不误报「没有产物」');
+
+  // Artifact 兜底：Release 没取到时必须显式说明，否则用户不知道固件为何只有 90 天寿命
+  ghRender({
+    id: 't-1', repo: 'a/b', state: 'completed', conclusion: 'success', summary: { target: 'x86', subtarget: '64' },
+    source: 'artifact', releaseMiss: '未找到该 tag 的 Release',
+    jobs: [], artifacts: [], files: [{ name: 'firmware-1.zip', file: 'firmware-1.zip', size: 1048576, kind: 'artifact' }],
+  });
+  const fbTxt = doc.querySelector('#ghStatus').textContent;
+  check(/已回退到 Actions Artifacts/.test(fbTxt), 'Release 取不到时标明已回退到 Artifacts');
+  check(/未找到该 tag 的 Release/.test(fbTxt), '回退原因被展示出来（不静默降级）');
+  check(/90 天后过期/.test(fbTxt), '提醒 Artifacts 的 90 天过期风险');
+
+  // 两个来源都空：必须把服务端给的可行动错误显示出来，而不是一行「没有产物」
+  ghRender({
+    id: 't-1', repo: 'a/b', state: 'completed', conclusion: 'success', summary: { target: 'x86', subtarget: '64' },
+    jobs: [], artifacts: [], files: [], error: '构建成功但没找到产物：未找到该 tag 的 Release。可能 release job 未执行，请打开 Actions 页面确认。',
+  });
+  check(/构建成功但没找到产物/.test(doc.querySelector('#ghStatus').textContent),
+    '无任何产物时展示具体错误而非泛泛提示');
 
   // 回传中：必须显示续传进度，且不能给出还没写完的"下载"链接
   ghRender({
     id: 't-1', repo: 'a/b', state: 'completed', conclusion: 'success', summary: { target: 'x86', subtarget: '64' },
-    jobs: [], artifacts: [], files: [{ name: 'firmware.zip', file: 'f.zip', pulling: true, written: 24 * 1048576, total: 168 * 1048576, resumed: 8 * 1048576 }],
+    source: 'release', jobs: [], artifacts: [],
+    files: [{ name: 'f.img.gz', file: 'f.img.gz', pulling: true, written: 24 * 1048576, total: 168 * 1048576, resumed: 8 * 1048576 }],
   });
   const pullTxt = doc.querySelector('#ghStatus').textContent;
   check(!doc.querySelector('#ghStatus a[href*="/api/build/file"]'), '回传中不提供尚未写完的下载链接');

@@ -52,6 +52,16 @@ const MIME = {
   '.json': 'application/json; charset=utf-8',
   '.zip': 'application/zip',
   '.svg': 'image/svg+xml',
+  // 固件产物（Release 附件的常见几种）
+  '.gz': 'application/gzip',
+  '.xz': 'application/x-xz',
+  '.zst': 'application/zstd',
+  '.img': 'application/octet-stream',
+  '.iso': 'application/x-iso9660-image',
+  '.bin': 'application/octet-stream',
+  '.sha256': 'text/plain; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
+  '.manifest': 'text/plain; charset=utf-8',
 };
 
 function json(res, code, obj) {
@@ -362,11 +372,17 @@ const server = http.createServer(async (req, res) => {
       const hit = (meta.files || []).find((f) => f.file === name || f.name === name);
       if (!hit || hit.error) return json(res, 404, { error: '没有这个文件' });
       const file = path.join(B.dirOf(meta.id), hit.file);
-      if (!file.startsWith(B.dirOf(meta.id)) || !fs.existsSync(file)) return json(res, 404, { error: '文件已不在本地' });
+      // 路径前缀校验必须带分隔符：否则 /out/builds/abc 也会"前缀匹配"上 /out/builds/abcd
+      const dir = path.resolve(B.dirOf(meta.id)) + path.sep;
+      if (!path.resolve(file).startsWith(dir) || !fs.existsSync(file)) {
+        return json(res, 404, { error: '文件已不在本地' });
+      }
       // 上百 MB 的产物支持 Range：浏览器/下载工具断线后能续传，不用重头再下
       const total = fs.statSync(file).size;
       const base = {
-        'Content-Type': 'application/zip',
+        // 不能写死 zip：Release 附件的种类多（.img.gz / .iso / .bin / sha256sums），
+        // 类型报错会被浏览器存成奇怪的后缀，用户双击打不开还以为是固件坏了
+        'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream',
         'Accept-Ranges': 'bytes',
         'Content-Disposition': `attachment; filename="${encodeURIComponent(hit.name)}"`,
       };

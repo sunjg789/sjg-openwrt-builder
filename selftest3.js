@@ -271,6 +271,75 @@ const check = (c, m) => { if (!c) fail++; console.log(`${c ? '  ✓' : '  ✗'} 
     }
   }
 
+  console.log('\n=== M. Release tag 必须与 lib/reltag.js 同源（漂移 = 构建全绿却找不到固件）===');
+  // app 用 releaseTag(summary, runId) 去查 Release，工作流用 releaseTagPrefix(spec)${{run_id}} 建 tag。
+  // 这两处一旦各自拼一遍，症状是「构建成功、Release 也在 GitHub 上、app 却说没有产物」，
+  // 而且双方都不报错——所以这里把「生成器输出的字符串」与「app 会算出的字符串」直接对拍。
+  const { releaseTagPrefix, releaseTag } = require('./lib/reltag');
+  for (const [engine, distro, ver] of [['ib', 'openwrt', '25.12.5'], ['src', 'immortalwrt', '25.12.2']]) {
+    // 用与 mk() 不同的版本，确保断言不是碰巧命中同一串
+    const specM = {
+      engine, distro, version: ver, target: 'x86', subtarget: '64', profile: 'generic',
+      archPackages: 'x86_64', packages: [], excludes: [], customRepos: [],
+      image: { rootfsSizeMB: 1024, kernelSizeMB: 32 }, system: {}, network: {},
+    };
+    const pvM = await post('/api/preview', specM);
+    const yfM = (pvM.files || []).find((f) => f.path && f.path.endsWith('.yml'));
+    const bodyM = (yfM && yfM.content) || '';
+    const prefix = releaseTagPrefix(specM);
+    const tag = `${distro} ${ver} ${engine}`;
+
+    check(bodyM.includes('TAG="' + prefix + '${{ github.run_id }}"'),
+      `${tag}: 工作流 TAG 前缀与 releaseTagPrefix() 一致（${prefix}）`);
+    check(/gh release create "\$\{?TAG\}?"/.test(bodyM), `${tag}: 用该 TAG 变量建 Release（不是另拼一遍）`);
+    // run_id 参与 tag 是「app 能预知 tag」的前提；换成日期/时间戳 app 就查不到了
+    check(bodyM.includes('${{ github.run_id }}'), `${tag}: tag 含 run_id（app 在 dispatch 后即可预知）`);
+    // release job 得先把 Artifact 取回来再发：固件不在构建 job 的工作区里了
+    const relM = jobBlock(bodyM, 'release');
+    check(/uses:\s*actions\/download-artifact/.test(relM), `${tag}: release job 先取回 Artifact`);
+    check(/--latest=false/.test(relM), `${tag}: Release 不抢 Latest 徽章（定制固件不该顶掉正式版）`);
+    check(/sha256sum/.test(relM), `${tag}: 上传前生成校验和`);
+    // Artifact 只作兜底，保留期必须压短，否则会啃掉账户级 500MB 配额
+    check(/upload-artifact@v\d[\s\S]{0,400}?retention-days:\s*1/.test(bodyM),
+      `${tag}: Artifact 保留期压到 1 天（它吃的是账户级 500MB 配额）`);
+    // 对拍：app 端用 meta.summary 走的路径，结果必须与工作流里那串前缀完全相同
+    check(releaseTag(specM, 99887766) === prefix + '99887766',
+      `${tag}: releaseTag(p, runId) 与工作流侧拼接结果逐字符相同`);
+  }
+
+  console.log('\n=== N. app 端从 Release 取产物（附件类型不能被当成 zip 校验）===');
+  // Artifact 是 zip（魔数 PK），Release 附件是 .img.gz / .iso / .bin，
+  // 若沿用同一套魔数校验，会把下好的固件判成坏文件——这条守卫检查魔数按扩展名分派。
+  const ghSrc = fs.readFileSync(path.join(__dirname, 'lib', 'gh.js'), 'utf8');
+  check(/function magicOf/.test(ghSrc), 'gh.js 里有按扩展名分派的 magicOf()');
+  check(/'\.gz'/.test(ghSrc) && /0x1f,\s*0x8b/.test(ghSrc), 'gzip 魔数 1f 8b 已登记（.img.gz 的主路径）');
+  check(/downloadTo\(/.test(ghSrc) && /downloadAsset\(/.test(ghSrc) && /downloadArtifact\(/.test(ghSrc),
+    'Artifact 与 Release 附件复用同一套续传主体');
+  check(/Accept:\s*'application\/octet-stream'/.test(ghSrc),
+    'Release 附件请求改 Accept: octet-stream（否则拿到的是 JSON 元数据）');
+  check(/releases\/tags\//.test(ghSrc), '按 tag 精确查 Release（不用列表做前缀匹配）');
+
+  const bSrc = fs.readFileSync(path.join(__dirname, 'lib', 'build.js'), 'utf8');
+  check(/require\('\.\/reltag'\)/.test(bSrc), 'build.js 的 tag 也来自 lib/reltag.js（三处同源）');
+  check(/async function resolveSources/.test(bSrc), 'build.js 有 resolveSources（Release 优先 / Artifact 兜底）');
+  check(/releaseMiss/.test(bSrc), '取不到 Release 时留痕说明原因（不静默）');
+  // /api/build/status 返回的就是 meta 本身，前端只读 m.releaseUrl；
+  // 把它嵌在 meta.release.url 里前端拿不到，「打开 Release 页」按钮会永远不出现（踩过）。
+  check(/meta\.releaseUrl\s*=/.test(bSrc), 'Release 地址平铺在 meta.releaseUrl（不平铺前端读不到）');
+  const idxRel = bSrc.indexOf('await gh.releaseByTag(tag)');
+  const idxArt = bSrc.indexOf('await gh.artifacts(meta.runId)');
+  check(idxRel > 0 && idxArt > idxRel, 'Release 查询在 Artifact 之前（优先级正确）');
+  // 兜底路径不能被当成「成功」：全部文件都失败时 downloaded 必须为 false，否则会立刻 terminal
+  check(/got\.length > 0 && got\.every/.test(bSrc), '空产物集不算「已回传完成」');
+  // 中断后复跑能否收敛，全看这条：只按 !error 筛会把「进程被杀时留下的 pulling:true」
+  // 当成已完成直接跳过 → 文件永不续传、pulling 永为 true → terminal 永不置位（实测踩到）。
+  check(/!f\.error && !f\.pulling/.test(bSrc),
+    'prevOk 只复用「确实下完」的记录（残留的 pulling 记录必须重下，否则任务永不收敛）');
+  check(/statSync\(dest\)\.size === old\.size/.test(bSrc),
+    '复用前校验盘上长度与记录一致（不把残缺文件当成品）');
+  // 一个来源都没有时必须给出可行动的错误，而不是安静地 finishedAt
+  check(/构建成功但没找到产物/.test(bSrc), '无任何产物时给出明确错误（而非静默结束）');
+
   console.log('\n=== 结果 ===');
   console.log(fail ? `\x1b[31m${fail} 项未通过\x1b[0m` : '\x1b[32m全部通过\x1b[0m');
   process.exit(fail ? 1 : 0);

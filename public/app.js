@@ -743,7 +743,9 @@ function ghRender(m) {
   let html = `<div class="gh-bar">
     <span class="state ${headCls}">${failed ? (m.state === 'failed' ? '失败' : '结束（结论 ' + m.conclusion + '）') : label}</span>
     ${m.repo ? `<span class="mini">${m.repo} · ${m.summary.target}/${m.summary.subtarget}</span>` : ''}
+    ${m.source === 'release' ? '<span class="state done">Release 已发布</span>' : ''}
     <span class="spacer"></span>
+    ${m.releaseUrl ? `<a class="btn sm" href="${m.releaseUrl}" target="_blank" rel="noopener">打开 Release 页</a>` : ''}
     ${m.runUrl ? `<a class="btn sm" href="${m.runUrl}" target="_blank" rel="noopener">在 GitHub 查看日志</a>` : ''}
   </div>`;
 
@@ -773,13 +775,22 @@ function ghRender(m) {
     html += '</div>';
   }
 
-  // 拉回本地的产物
+  // 产物：优先来自 Release（不占 Artifacts 配额、永久保存），Release 不可用时才回退 Artifact
   if (m.files && m.files.length) {
+    if (m.source === 'release') {
+      html += `<div class="gh-bar" style="margin-top:8px"><span class="mini">产物来自 GitHub Release${
+        m.releaseTag ? ` <code>${escHtml(m.releaseTag)}</code>` : ''
+      }（不占 Artifacts 500MB 配额，永久保存；同时保留在 Actions 页面）</span></div>`;
+    } else if (m.source === 'artifact') {
+      html += `<div class="gh-bar" style="margin-top:8px"><span class="mini">没有取到 Release${
+        m.releaseMiss ? `（${escHtml(m.releaseMiss)}）` : ''
+      }，已回退到 Actions Artifacts。注意 Artifacts 默认 90 天后过期。</span></div>`;
+    }
     html += '<div class="gh-steps" style="margin-top:9px">';
     for (const f of m.files) {
       if (f.error) {
-        html += `<div class="gh-step fail"><span class="dot"></span><span class="nm">${f.name}</span>
-          <span class="mini">拉取失败：${f.error}</span></div>`;
+        html += `<div class="gh-step fail"><span class="dot"></span><span class="nm">${escHtml(f.name)}</span>
+          <span class="mini">拉取失败：${escHtml(f.error)}</span></div>`;
         continue;
       }
       if (f.pulling) {
@@ -787,20 +798,21 @@ function ghRender(m) {
         const mb = (n) => (Number(n) / 1048576).toFixed(1);
         const pct = f.total ? Math.min(99, Math.floor((f.written / f.total) * 100)) : 0;
         html += `<div class="gh-step run"><span class="dot"></span>
-          <span class="nm">${f.name}<span class="mini"> · 正在回传 ${mb(f.written)} / ${f.total ? mb(f.total) + ' MB' : '未知大小'}（${pct}%）</span></span>
+          <span class="nm">${escHtml(f.name)}<span class="mini"> · 正在回传 ${mb(f.written)} / ${f.total ? mb(f.total) + ' MB' : '未知大小'}（${pct}%）</span></span>
           <span class="mini">${f.resumed ? '已续传 ' + mb(f.resumed) + ' MB · ' : ''}回传中，可继续等待或先关页面</span></div>`;
         continue;
       }
       const url = `/api/build/file?id=${encodeURIComponent(m.id)}&name=${encodeURIComponent(f.file)}`;
       html += `<div class="gh-step done"><span class="dot"></span>
-        <span class="nm">${f.name}<span class="mini"> · ${(f.size / 1048576).toFixed(1)} MB</span></span>
+        <span class="nm">${escHtml(f.name)}<span class="mini"> · ${f.size ? (f.size / 1048576).toFixed(1) + ' MB' : '大小未知'}</span></span>
         <a class="btn sm" href="${url}">下载到本地</a></div>`;
     }
     html += '</div>';
   } else if (m.state === 'completed') {
     html += `<div class="gh-bar" style="margin-top:8px"><span class="mini">${
-      m.logTail ? '工作流在中途失败，没有产出 Artifact（原因见上方摘要）。'
-        : '这次运行没有产出 Artifact（工作流可能在中途失败，建议点上方按钮看 GitHub 日志）。'
+      m.error ? escHtml(m.error)
+        : m.logTail ? '工作流在中途失败，没有产出任何固件（原因见上方摘要）。'
+          : '这次运行没有产出任何固件（工作流可能在中途失败，建议点上方按钮看 GitHub 日志）。'
     }</span></div>`;
   }
   $('#ghStatus').innerHTML = html;

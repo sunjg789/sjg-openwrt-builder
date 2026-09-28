@@ -128,7 +128,7 @@ openwrt-custom-builder/
 | GET/POST | `/api/preset/*` | 预设存取 |
 | GET/POST | `/api/build/config` | 在线构建凭据：`owner/repo` + Token（**读接口不回显 Token**） |
 | POST | `/api/build/start` | 生成构建包 → 推到专属分支 → 触发 Actions 运行，返回任务 id |
-| GET | `/api/build/status?id=` | 查询进度（job/step 级）；运行结束后自动拉回 Artifacts 与失败日志 |
+| GET | `/api/build/status?id=` | 查询进度（job/step 级）；运行结束后自动把产物（Release 优先 / Artifact 兜底）与失败日志拉回本地 |
 | GET | `/api/build/list` | 历史在线构建 |
 | GET | `/api/build/file?id=&name=` | 下载已拉回本地的产物 zip |
 
@@ -169,7 +169,7 @@ openwrt-custom-builder/
   ② Git Data API 推到孤儿分支 build/<distro>-<ver>-<target>-<sub>-<stamp>
   ③ 触发运行（dispatch 优先，push 兜底）
   ④ 每 5 秒轮询 job / step 进度，前端按步骤着色
-  ⑤ 运行结束 → 云端自动发 Release（永久存档，免登录可下）；站点再把 Artifacts 拉回 out/builds/<id>/，页面上直接「下载到本地」
+  ⑤ 运行结束 → 云端自动发 Release（永久存档、免登录可下）；站点**优先从该 Release 拉回产物**，取不到才退回 Artifacts，落在 out/builds/<id>/，页面上直接「下载到本地」
   ⑥ 若失败 → 拉回云端日志，面板里摊开报错摘要 + 可折叠的日志尾部
 ```
 
@@ -181,7 +181,7 @@ openwrt-custom-builder/
 | 加了 `[skip ci]` 后一个 run 都没有 | 注册状态未必准确，dispatch 说成功但没跑 | 轮询不到 run 时自动去掉 `[skip ci]` 再推一次兜底 |
 | 明明跑完了却查不到 run | 用 `created>=` 过滤时，本机 `Date.now()` 与 GitHub `created_at` 有偏差 | **完全不用时间过滤**，取该独享分支最新的 run |
 | 两个 run 同时跑，分钟数翻倍 | push 触发器与 dispatch 各起一个 | 走 dispatch 时才带 `[skip ci]` |
-| Artifact 下载 302 拿到 HTML | REST 接口返回跳转地址 | 手动跟 `Location`，并校验 zip 魔数 `PK` |
+| Artifact 下载 302 拿到 HTML | REST 接口返回跳转地址 | 手动跟 `Location`，并校验魔数（zip 认 `PK`，`.img.gz` 认 `1f 8b`，按扩展名分派） |
 | 失败只见 `Process completed with exit code 2` | 真正的报错埋在几百行 make 输出里 | 拉 `/actions/runs/<id>/logs`（**零依赖手写 ZIP 解析**），提炼报错行后在前端显示 |
 | 大产物下载到一半 `terminated` | Node 的 `fetch` **不读 `HTTP_PROXY`**，且整包流式下载中途断掉就前功尽弃 | 改成 **Range 分片 + 断点续传 + 逐片重试**，先 `Range: bytes=0-0` 探总长，再按 4MB 一片写入 |
 | 续传到一半全部报 **HTTP 403** | 下载直链是 **Azure 的短期 SAS 令牌**，十几分钟就失效；旧链接重试多少次都没用 | 每次重试都重新向 REST 取一张新票（`artifactZipUrl()`）再续下 |
@@ -198,7 +198,11 @@ openwrt-custom-builder/
 
 Artifact 只适合"把产物取回本地"——它 90 天过期、必须登录才能下载，而且**占用账户级 500MB 存储额度**（与 Packages 共享），用尽后不是变慢而是直接阻止上传。所以工作流在产物之外还会**自动发一个 Release**：附件不占那份额度，永久保存，公开仓库免登录即可下载。
 
-tag 形如 `<distro>-<version>-<target>-<subtarget>-<profile>-<UTC 时间戳>`，每跑一次构建就是一个独立条目，不会互相覆盖，也不用手工清 tag。附件是**解压后的各个固件文件**（不是一整个 zip），外加 `SHA256SUMS.txt`，可以只下自己要的那一个。
+tag 形如 `<distro>-<version>-<target>-<subtarget>-<profile>-r<run_id>`，每跑一次构建就是一个独立条目，不会互相覆盖，也不用手工清 tag。附件是**解压后的各个固件文件**（不是一整个 zip），外加 `SHA256SUMS.txt`，可以只下自己要的那一个。
+
+用 **`run_id`** 而不是时间戳当后缀，是因为站点在 dispatch 之后立刻就拿到了 `run_id`，却**不可能预知**工作流运行时才生成的日期。tag 必须完全由站点已知的信息构成，这样它才能用 `GET /releases/tags/<tag>` 精确定位，而不必退化成「拉列表按前缀模糊匹配」——后者在并发构建时会返回别人的 Release。
+
+这条规则只写在 **`lib/reltag.js`** 一个地方，生成器（`genib.js` / `gensrc.js`）与站点（`build.js`）都从它取。两边一旦各自拼一遍，症状是「构建全绿、Release 也在 GitHub 上、站点却说没有产物」，而且双方都不报错 —— 所以 `selftest3.js` 的 M 组会把「生成器输出的字符串」与「站点会算出的字符串」直接逐字符对拍。
 
 Release 默认带 `--latest=false`：这是按需构建的定制固件，不该去抢仓库的 Latest 徽章。
 
@@ -210,6 +214,27 @@ Release 默认带 `--latest=false`：这是按需构建的定制固件，不该�
 | 发布（`release`） | `contents: write` | 只做三件事：取回 Artifact、算校验和、建 Release 上传。**不 checkout、不执行任何来自构建产物的代码**，攻击面小得多 |
 
 对应断言在 `selftest3.js` 的 H 组：构建 job 不得持有写权限、写权限全文件只出现一次、且必须落在 release job 上、release job 不得 checkout。
+
+### 站点的下载源：Release 优先，Artifact 兜底
+
+产物在云端有两份，站点的取用顺序是 **Release 优先**：
+
+| 来源 | 判断方式 | 为什么 |
+|---|---|---|
+| Release 附件（首选） | `GET /releases/tags/<tag>`，tag 由 `lib/reltag.js` 算出 | 不占账户级 500MB 额度、永久保存、公开仓库免登录；而且是解压后的单文件，不用再拆 zip |
+| Actions Artifacts（兜底） | Release 查不到时退回 `GET /actions/runs/<id>/artifacts` | release job 万一失败，固件依然能被取回，不会因为一个附属步骤把整次构建判死 |
+
+这样即使发布环节挂了，站点仍能拿到产物（面板会明确写出「已回退到 Actions Artifacts，注意 90 天过期」以及回退原因），而不是安静地少一个文件。
+
+云端也因此把 Artifacts 的 `retention-days` 压到 **1 天**：它只是兜底通道，留着长期占配额没有意义。
+
+两条来源共用同一套下载主体（`downloadTo()`：探长度 → Range 分片 → 断点续传 → 逐片换新票 → 收尾校验），差别只有两处，都容易踩：
+
+- **取票接口不同**：Artifact 走 `/actions/artifacts/<id>/zip`，Release 附件走 `/releases/assets/<id>`。
+- **`Accept` 必须改成 `application/octet-stream`**：默认的 `application/vnd.github+json` 拿到的是**附件元数据 JSON**，而且是 200 而不是 302 —— 会静悄悄地把一段 JSON 当固件存到磁盘上。
+- **魔数不能只认 `PK`**：Artifact 是 zip，Release 附件是 `.img.gz` / `.iso` / `.bin` / `.txt`，所以魔数按扩展名分派（`magicOf()`），认不出的类型就不校验（`.iso` / `.bin` 没有统一魔数）。
+
+对应断言在 `selftest3.js` 的 N 组（含 Release 查询必须排在 Artifact 之前、空产物集不得算「回传完成」）与 `selftest-ui.js` 的 I 组（Release 态、兜底态、两来源皆空的渲染）。
 
 依赖也是我们踩出来的补齐项（`lib/genib.js` 的 apt 那一步）：
 
@@ -233,7 +258,7 @@ Release 默认带 `--latest=false`：这是按需构建的定制固件，不该�
 |---|---|---|
 | **第 3 步「官方预编译固件」直下** | 上游现成镜像，**不含你勾选的插件** | 选完设备后点击下载，附 SHA256 可校验 |
 | **把构建包丢给 Linux 主机** | 带自定义插件的完整固件 | 下载 ZIP → 在 Linux/云主机上 `bash build.sh` |
-| **GitHub Actions 在线编译** | 带自定义插件的完整固件，不用自己备机器 | 第 6 步「在线构建」填一次仓库 + Token，站点自动推分支、触发、轮询并把 Artifacts 拉回本地（详见下一章） |
+| **GitHub Actions 在线编译** | 带自定义插件的完整固件，不用自己备机器 | 第 6 步「在线构建」填一次仓库 + Token，站点自动推分支、触发、轮询并把产物（Release 优先）拉回本地（详见下一章） |
 
 第一条已在本站实现，数据源是上游 `sha256sums`（**不是** `profiles.json` 的 `images[]`——
 后者缺 `.gz` 后缀，实测会 404）。
